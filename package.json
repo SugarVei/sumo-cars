@@ -1,0 +1,21 @@
+{
+  "name": "punch-drive",
+  "version": "4.1.0",
+  "private": true,
+  "type": "module",
+  "description": "PUNCH DRIVE (重拳飞车): offline neon car-combat party game with Grand Prix racing, Sumo, Crown Clash, Meltdown, a Party Tour and drift-charged nitro",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node serve.mjs",
+    "test": "node 验证脚本/qa-punch-drive.mjs",
+    "test:perf": "node 验证脚本/qa-punch-drive.mjs --perf"
+  },
+  "dependencies": {
+    "cannon-es": "0.20.0",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.65.0"
+  }
+}

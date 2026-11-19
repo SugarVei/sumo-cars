@@ -1,0 +1,11 @@
+import { build } from 'esbuild';
+import { readFile, writeFile } from 'node:fs/promises';
+const result = await build({entryPoints:['src/main.js'],bundle:true,minify:true,format:'iife',target:'es2020',write:false,legalComments:'none'});
+const css = await readFile('src/style.css','utf8');
+const js = result.outputFiles[0].text.replace(/<\/script/gi,'<\\/script');
+const licenses = await Promise.all(['three','cannon-es','esbuild'].map(async name => `\n${'='.repeat(60)}\n${name}\n${'='.repeat(60)}\n${await readFile(`node_modules/${name}/${name==='esbuild'?'LICENSE.md':'LICENSE'}`,'utf8')}`));
+const licenseComment=licenses.join('\n').replace(/\*\//g,'* /').replace(/<\/script/gi,'<\\/script');
+const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#151321"/><path fill="none" stroke="#38d9f5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M13 38V10h22l-5 7 5 6H14"/></svg>';
+await writeFile('Sumo Cars.html', `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="theme-color" content="#08090d"><link rel="icon" type="image/svg+xml" href="data:image/svg+xml,${encodeURIComponent(icon)}"><title>PUNCH DRIVE 重拳飞车 · 竞速 乱斗 生存</title><style>${css}</style></head><body><script>/*${licenseComment}*/\n${js}</script></body></html>`);
+await writeFile('THIRD-PARTY-LICENSES.txt',licenses.join('\n'));
+console.log('Built offline Sumo Cars.html. No server or network required.');

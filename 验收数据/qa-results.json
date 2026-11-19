@@ -1,0 +1,418 @@
+{
+  "date": "2026-11-19T12:34:13.917Z",
+  "passed": 38,
+  "total": 38,
+  "checks": [
+    {
+      "name": "Title screen lists five events",
+      "pass": true
+    },
+    {
+      "name": "Page language is zh-CN",
+      "pass": true
+    },
+    {
+      "name": "Mode names are Chinese",
+      "pass": true
+    },
+    {
+      "name": "Title screen copy is Chinese",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "Grand Prix offers two tracks",
+      "pass": true
+    },
+    {
+      "name": "Car step opens the garage",
+      "pass": true
+    },
+    {
+      "name": "Garage copy is Chinese",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "Start applies venue, laps, class and paint",
+      "pass": true,
+      "detail": {
+        "mode": "race",
+        "venue": "canyon",
+        "classId": "dart",
+        "paint": "sakura",
+        "difficulty": "normal",
+        "quality": "medium",
+        "music": true,
+        "laps": 2,
+        "format": "classic",
+        "rounds": 3,
+        "crownTarget": 60,
+        "musicVolume": 1,
+        "sfxVolume": 1,
+        "glove": "spring",
+        "players": 1
+      }
+    },
+    {
+      "name": "W accelerates after the start lights",
+      "pass": true,
+      "detail": 20.3
+    },
+    {
+      "name": "A steers left",
+      "pass": true
+    },
+    {
+      "name": "Shift + steer engages drift",
+      "pass": true
+    },
+    {
+      "name": "Drifting fills the nitro gauge",
+      "pass": true,
+      "detail": {
+        "before": 0,
+        "after": 0.115
+      }
+    },
+    {
+      "name": "Nitro HUD explains itself in Chinese",
+      "pass": true,
+      "detail": "漂移中 · 正在积攒氮气"
+    },
+    {
+      "name": "HUD shows one full nitro tank",
+      "pass": true
+    },
+    {
+      "name": "Space fires a nitro tank",
+      "pass": true,
+      "detail": {
+        "on": true,
+        "tanks": 0
+      }
+    },
+    {
+      "name": "HUD shows the nitro burn",
+      "pass": true
+    },
+    {
+      "name": "Race HUD copy is Chinese",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "Driver remains on the straight during the input checks",
+      "pass": true
+    },
+    {
+      "name": "J throws a punch",
+      "pass": true,
+      "detail": {
+        "active": true,
+        "cooldown": 2.2
+      }
+    },
+    {
+      "name": "Q fires the held item",
+      "pass": true,
+      "detail": {
+        "active": true,
+        "effect": "boost"
+      }
+    },
+    {
+      "name": "Esc pauses",
+      "pass": true
+    },
+    {
+      "name": "Space cannot press a focused button while paused",
+      "pass": true
+    },
+    {
+      "name": "Esc resumes",
+      "pass": true
+    },
+    {
+      "name": "Audio starts from the click",
+      "pass": true
+    },
+    {
+      "name": "3-lap race on neon reaches the podium",
+      "pass": true,
+      "detail": {
+        "t": 137,
+        "state": "results",
+        "falls": [
+          3,
+          4,
+          1,
+          1,
+          6,
+          4
+        ],
+        "nitro": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "finished": 6,
+        "best": [
+          39.8,
+          36.6,
+          34,
+          39.2,
+          41.7,
+          33.1
+        ]
+      }
+    },
+    {
+      "name": "Drivers drift-charge and fire nitro on neon",
+      "pass": true,
+      "detail": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ]
+    },
+    {
+      "name": "3-lap race on canyon reaches the podium",
+      "pass": true,
+      "detail": {
+        "t": 154.5,
+        "state": "results",
+        "falls": [
+          9,
+          7,
+          3,
+          6,
+          5,
+          3
+        ],
+        "nitro": [
+          5,
+          3,
+          5,
+          4,
+          4,
+          4
+        ],
+        "finished": 4,
+        "best": [
+          40.8,
+          46.4,
+          35.4,
+          50.8,
+          39.8,
+          41.1
+        ]
+      }
+    },
+    {
+      "name": "Drivers drift-charge and fire nitro on canyon",
+      "pass": true,
+      "detail": [
+        5,
+        3,
+        5,
+        4,
+        4,
+        4
+      ]
+    },
+    {
+      "name": "Classic Sumo plays all six rounds to the results",
+      "pass": true,
+      "detail": {
+        "t": 361.5,
+        "state": "results",
+        "fires": 61,
+        "scores": [
+          12,
+          21,
+          6,
+          13,
+          15,
+          13
+        ]
+      }
+    },
+    {
+      "name": "Arena drivers also use nitro rams",
+      "pass": true,
+      "detail": 61
+    },
+    {
+      "name": "Results copy is Chinese",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "Crown Clash banks crown time and ends",
+      "pass": true,
+      "detail": {
+        "t": 138,
+        "state": "results",
+        "time": [
+          11.3,
+          15.8,
+          5,
+          11.3,
+          23.4,
+          13.9
+        ]
+      }
+    },
+    {
+      "name": "Meltdown finishes three rounds",
+      "pass": true,
+      "detail": {
+        "t": 72,
+        "state": "results",
+        "points": [
+          10,
+          2,
+          13,
+          4,
+          6,
+          4
+        ]
+      }
+    },
+    {
+      "name": "Party Tour goes straight to car select",
+      "pass": true
+    },
+    {
+      "name": "Tour plays race, sumo, crown, meltdown, race",
+      "pass": true,
+      "detail": [
+        "race",
+        "sumo",
+        "crown",
+        "meltdown",
+        "race"
+      ]
+    },
+    {
+      "name": "Tour standings appear on the final results",
+      "pass": true
+    },
+    {
+      "name": "No page errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "No network requests (fully offline)",
+      "pass": true,
+      "detail": []
+    }
+  ],
+  "metrics": {
+    "race-neon": {
+      "t": 137,
+      "state": "results",
+      "falls": [
+        3,
+        4,
+        1,
+        1,
+        6,
+        4
+      ],
+      "nitro": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "finished": 6,
+      "best": [
+        39.8,
+        36.6,
+        34,
+        39.2,
+        41.7,
+        33.1
+      ]
+    },
+    "race-canyon": {
+      "t": 154.5,
+      "state": "results",
+      "falls": [
+        9,
+        7,
+        3,
+        6,
+        5,
+        3
+      ],
+      "nitro": [
+        5,
+        3,
+        5,
+        4,
+        4,
+        4
+      ],
+      "finished": 4,
+      "best": [
+        40.8,
+        46.4,
+        35.4,
+        50.8,
+        39.8,
+        41.1
+      ]
+    },
+    "sumo": {
+      "t": 361.5,
+      "state": "results",
+      "fires": 61,
+      "scores": [
+        12,
+        21,
+        6,
+        13,
+        15,
+        13
+      ]
+    },
+    "crown": {
+      "t": 138,
+      "state": "results",
+      "time": [
+        11.3,
+        15.8,
+        5,
+        11.3,
+        23.4,
+        13.9
+      ]
+    },
+    "meltdown": {
+      "t": 72,
+      "state": "results",
+      "points": [
+        10,
+        2,
+        13,
+        4,
+        6,
+        4
+      ]
+    }
+  },
+  "errors": [],
+  "requests": []
+}

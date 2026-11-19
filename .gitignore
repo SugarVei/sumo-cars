@@ -1,0 +1,5 @@
+node_modules/
+backup-before-*/
+截图/
+.DS_Store
+Thumbs.db
