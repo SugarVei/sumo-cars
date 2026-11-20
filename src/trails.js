@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 
-const tailRed = new THREE.Color(0xff303e);
-const POINTS = 40;
-const SPACING = 0.42;
+const speedCyan = new THREE.Color(0x6ad6ff);
+const nitroIce = new THREE.Color(0xbceeff);
+const POINTS = 36;
+const SPACING = 0.38;
 const point = new THREE.Vector3();
 const side = new THREE.Vector3();
 
@@ -26,7 +27,7 @@ export function createTrails(scene) {
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4).setUsage(THREE.DynamicDrawUsage));
     geometry.setIndex(indices);
-    const material = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+    const material = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.NormalBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.frustumCulled = false; mesh.renderOrder = 6; mesh.name = `Light trail / ${car.name}`;
     scene.add(mesh);
@@ -49,11 +50,10 @@ export function createTrails(scene) {
       if (!group || !car.visual.taillights) { entry.mesh.visible = false; continue; }
       const speed = Math.abs(car.speed || 0);
       const boosted = car.nitroOn || car.driftBoost || car.effect === 'boost' || car.padBoostEnd > (settings.simTime ?? 0);
-      // The chased car only streaks while boosting, so its own trail never floods the camera.
       const own = settings.focusId === car.id;
-      const wake = car.drifting ? .52 : THREE.MathUtils.clamp((speed-17)/18,0,.56);
-      const wanted = !car.active ? 0 : Math.max(wake,boosted ? (own ? .55 : 1) : settings.always && !own ? THREE.MathUtils.clamp((speed-9)/14,0,1) : 0);
-      entry.intensity += (wanted - entry.intensity) * (1 - Math.exp(-dt * 6));
+      const wake = car.drifting ? .68 : THREE.MathUtils.clamp((speed - 11.5) / 14, 0, .62);
+      const wanted = !car.active ? 0 : Math.max(wake, boosted ? (own ? .85 : 1) : settings.always && !own ? THREE.MathUtils.clamp((speed - 8) / 13, 0, .82) : 0);
+      entry.intensity += (wanted - entry.intensity) * (1 - Math.exp(-dt * 7.5));
       if (entry.intensity < 0.01 && entry.history[0].length === 0) { entry.mesh.visible = false; continue; }
       group.updateMatrixWorld();
       side.set(1, 0, 0).transformDirection(group.matrixWorld);
@@ -70,10 +70,11 @@ export function createTrails(scene) {
           history.unshift(item);
         } else { history[0].p.copy(point); history[0].s.copy(side); }
       }
-      const color = boosted ? car.visual.glowColor : tailRed;
+      // Clean translucent ice-blue & white twin speed ribbons (clearly legible in bright daylight arenas too).
+      const color = boosted ? nitroIce : speedCyan;
       const night = settings.night ?? 0.5;
-      const gain = (0.42 + night * 0.7) * entry.intensity;
-      const width = 0.075 + 0.035 * entry.intensity;
+      const gain = (0.48 + night * 0.24) * entry.intensity * (own && !boosted ? 0.8 : 1);
+      const width = 0.115 + 0.05 * entry.intensity;
       let visible = false;
       for (let r = 0; r < 2; r++) {
         const history = entry.history[r];
@@ -81,20 +82,19 @@ export function createTrails(scene) {
           const item = history[Math.min(i, history.length - 1)];
           const base = ((r * POINTS + i) * 2);
           if (!item) { for (let k = 0; k < 2; k++) entry.colors[(base + k) * 4 + 3] = 0; continue; }
-          const fade = i >= history.length ? 0 : Math.pow(1 - i / POINTS, 1.6) * gain;
+          const fade = i >= history.length ? 0 : Math.pow(1 - i / POINTS, 1.45) * gain;
           if (fade > 0.002) visible = true;
-          const w = width * (1 - i / POINTS * 0.6);
+          const w = width * (1 - i / POINTS * 0.55);
           for (let k = 0; k < 2; k++) {
             const sign = k ? 1 : -1, v = base + k;
             entry.positions[v * 3] = item.p.x + item.s.x * w * sign;
             entry.positions[v * 3 + 1] = item.p.y + item.s.y * w * sign;
             entry.positions[v * 3 + 2] = item.p.z + item.s.z * w * sign;
-            // Hot white core near the car cooling into the car's neon colour.
-            const heat = Math.max(0, 1 - i / 4);
-            entry.colors[v * 4] = color.r + heat * 0.35;
-            entry.colors[v * 4 + 1] = color.g + heat * 0.35;
-            entry.colors[v * 4 + 2] = color.b + heat * 0.35;
-            entry.colors[v * 4 + 3] = fade;
+            const heat = Math.max(0, 1 - i / 6);
+            entry.colors[v * 4] = Math.min(1, color.r + heat * 0.36);
+            entry.colors[v * 4 + 1] = Math.min(1, color.g + heat * 0.26);
+            entry.colors[v * 4 + 2] = Math.min(1, color.b + heat * 0.14);
+            entry.colors[v * 4 + 3] = Math.min(0.76, fade);
           }
         }
       }

@@ -77,11 +77,25 @@ let perfWarmup=2;
 
 let state='menu',mode=null,demo=true,simTime=0,accumulator=0,lastFrame=performance.now(),uiClock=0,menuClock=0;
 let hitStopLeft=0,slowLeft=0,shake=0,fovKick=0,muted=false,demoRestart=0,recoverCooldown=0,cameraCut=0;
-let options={mode:'race',venue:'neon',classId:'rumbler',paint:'arctic',difficulty:'normal',quality:'medium',music:true,laps:3,format:'classic',rounds:3,crownTarget:60};
+let options={mode:'sumo',venue:'testpit',classId:'dart',paint:'arctic',difficulty:'normal',quality:'medium',music:true,laps:3,format:'team',rounds:3,crownTarget:60};
 let previewKey='',autopilot=false,perfClock=0,perfFrames=0,lowStreak=0;
 const shakeDir=new THREE.Vector3(1,0,0);
 const tour={active:false,events:[],index:0,points:Array(6).fill(0),history:[]};
 let lookKeys=new Map();
+const popups=[];
+let popupSeq=1;
+function spawnPopup(pos,score,tag,tone='punch'){
+  if(!pos)return;
+  // 空间+时间节流：避免多人混战时飘字扎堆糊成一团，每次关键重击清晰独立呈现
+  const close=popups.find(p=>p.age<0.22&&Math.hypot(p.x-pos.x,p.z-pos.z)<3.4);
+  if(close){
+    if((score||0)>close.score){close.score=score;close.tag=tag;close.tone=tone;close.age=0;}
+    return;
+  }
+  const jx=(Math.random()-.5)*1.1,jz=(Math.random()-.5)*1.1;
+  popups.push({id:popupSeq++,x:pos.x+jx,y:(pos.y||0)+1.75,z:pos.z+jz,score:score||0,tag:tag||'',tone,age:0,life:.85});
+  if(popups.length>5)popups.shift();
+}
 
 function newRecord(){return {punches:0,punchHits:0,kos:0,falls:0,streak:0,maxStreak:0,victims:{},killers:{},roundKos:Array(8).fill(0),bestLap:null,overtakes:0,crownTime:0,steals:0,edgeSeconds:0};}
 
@@ -90,9 +104,10 @@ const env={world,cars,simTime:0,grip:1,speedScale:1,airControl:false,props:[],pu
   skid:car=>effects.skid(car),
   nitroReady:car=>{if(car.isPlayer&&!demo){sound.tone(880,.12,'triangle',.06,1320);ui.nitroReady?.(car.nitroTanks);}},
   nitroFire:car=>{effects.nitroBurst?.(car);if(!demo&&car.isPlayer){sound.boost?.();fovKick=Math.max(fovKick,7);shake=Math.max(shake,.12);}},
-  punchHit:(a,t,powered,shielded)=>onPunchHit(a,t,powered,shielded),
+  punchHit:(a,t,powered,shielded,score)=>onPunchHit(a,t,powered,shielded,score),
   propHit:(car,prop)=>{effects.impact(prop.body.position,.75);if(!demo)sound.collision(.5,pan(prop.body.position));},
-  collision:(a,b,closing,d)=>onCollision(a,b,closing,d),
+  collision:(a,b,closing,d,score)=>onCollision(a,b,closing,d,score),
+  hazardHit:(car,pos,score,label)=>onHazardHit(car,pos,score,label),
   shove:(a,b,strength)=>mode?.onShove?.(a,b,strength),
 }};
 
@@ -111,6 +126,7 @@ const ctx={
   shake:(amount,dir)=>{if(demo)return;shake=Math.max(shake,amount);if(dir)shakeDir.copy(dir);},
   fovKick:deg=>{if(!demo)fovKick=Math.max(fovKick,deg);},
   announce:(...args)=>{if(!demo)ui.announce(...args);},
+  popup:(pos,score,tag,tone)=>{if(!demo)spawnPopup(pos,score,tag,tone);},
   feed:message=>{if(!demo)ui.feed(message);},
   countdown:value=>{if(!demo)ui.countdown(value);if(!demo&&value!=null)sound.countdown(value);},
   finish:results=>finishMatch(results),
@@ -174,13 +190,13 @@ function launch(modeId,settings,isDemo){
   demo=isDemo;simTime=0;accumulator=0;hitStopLeft=0;slowLeft=0;shake=0;fovKick=0;demoRestart=0;recoverCooldown=0;clearInput();
   cars[1].name=duo()?'二号车手':ROSTER[1].name;
   localCameras.reset();perfClock=0;perfFrames=0;lowStreak=0;perfWarmup=2;
-  effects.reset();trails.clear();resetContacts();studio.hide();post.fx.speed=0;post.fx.flash=0;
+  effects.reset();trails.clear();resetContacts();studio.hide();post.fx.speed=0;post.fx.flash=0;popups.length=0;ui.setPopups?.([]);
   const next=createMode(modeId,ctx,settings);
   const venue=venues.set(next.venue.type,next.venue.id);
   venue.setVisible?.(true);venue.group&&(venue.group.visible=true);
   configureCars();applyVenueLook(venue);
   env.grip=venue.descriptor.grip||1;env.speedScale=next.speedScale||1;env.airControl=!!next.airControl;env.props=venue.dynamicProps||[];env.punchScale=next.punchScale||1;env.punchStyle=next.punchStyle||'push';env.cooldown=next.cooldown??2;
-  for(const car of cars){car.score=0;car.record=newRecord();car.mode={};car.speedMul=1;car.effect=null;car.effectEnd=0;car.padBoostEnd=0;car.revenge=null;car.lastKO=-99;car.combo=0;car.nitro=0;car.nitroTanks=0;car.nitroEnd=0;car.nitroOn=false;}
+  for(const car of cars){car.team=null;car.visual?.setTeam?.(null);car.score=0;car.record=newRecord();car.mode={};car.speedMul=1;car.effect=null;car.effectEnd=0;car.padBoostEnd=0;car.revenge=null;car.lastKO=-99;car.combo=0;car.nitro=0;car.nitroTanks=0;car.nitroEnd=0;car.nitroOn=false;}
   for(const car of cars)car.stagger=0;
   mode=next;mode.start();
   cameraCut=1;resetCamera();
@@ -205,22 +221,22 @@ function restartMatch(){
 }
 function preview(selection={}){
   if(!['menu','setup','garage'].includes(state))return;
-  const modeId=selection.mode==='tour'||!selection.mode?'race':selection.mode;
+  const modeId=selection.mode==='tour'||!selection.mode?'sumo':selection.mode;
   const venue=selection.venue||MODE_INFO[modeId]?.defaultVenue;
   const key=modeId+':'+venue;
   if(state==='garage')setGarage(false);
   if(key===previewKey&&mode)return;
   previewKey=key;
-  launch(modeId,{...options,mode:modeId,venue,difficulty:'normal',laps:99,format:'classic',rounds:99,crownTarget:999,demoLoop:true},true);
+  launch(modeId,{...options,mode:modeId,venue,difficulty:'normal',laps:99,format:modeId==='sumo'?'team':'classic',rounds:99,crownTarget:999,demoLoop:true},true);
 }
 function showMenu(){
   tour.active=false;state='menu';demo=true;keys.clear();
   ui.showScreen('menu');
-  previewKey='';preview({mode:'race',venue:'neon'});
+  previewKey='';preview({mode:'sumo',venue:'testpit'});
   sound.update({playing:false,speed:0},0);
 }
 function setGarage(on){
-  if(on){state='garage';configurePlayer();venues.current.group&&(venues.current.group.visible=false);venues.current.setVisible?.(false);studio.showGarage(cars[0]);for(const car of cars)if(car.id)car.visual.group.visible=false;
+  if(on){state='garage';effects.reset();trails.clear();popups.length=0;ui.setPopups?.([]);configurePlayer();venues.current.group&&(venues.current.group.visible=false);venues.current.setVisible?.(false);studio.showGarage(cars[0]);for(const car of cars)if(car.id)car.visual.group.visible=false;
     lighting.setTheme({zenith:0x0b0d1e,horizon:0x1b1736,ground:0x05060c,sunColor:0xdfe8ff,sunIntensity:2.2,ambientIntensity:.55,night:.9,fogNear:40,fogFar:140,showSun:false},'studio');post.setLook('studio');cars[0].visual.setNight(.6);}
   else if(state==='garage'){state='setup';studio.hide();const venue=venues.current;venue.group&&(venue.group.visible=true);venue.setVisible?.(true);applyVenueLook(venue);for(const car of cars)car.visual.group.visible=car.active;}
 }
@@ -246,6 +262,7 @@ function finishMatch(results){
     tourInfo=tourSummary();tourInfo.finished=tour.index>=tour.events.length-1;
   }
   const venue=venues.current;venue.group&&(venue.group.visible=false);venue.setVisible?.(false);
+  effects.reset();trails.clear();popups.length=0;ui.setPopups?.([]);
   for(const car of cars)car.visual.group.visible=false;
   const finalTour=tourInfo?.finished;
   studio.showPodium(finalTour?tourInfo.standings.slice(0,3).map(s=>cars[s.id]):podiumCars);
@@ -257,7 +274,7 @@ function finishMatch(results){
 
 // ---------------------------------------------------------------- party tour
 function startTour(){
-  const arenas=['neon','mesa','glacier','sakura','orbital','meadow'];
+  const arenas=['testpit','neon','mesa','glacier','sakura','orbital','meadow'];
   const pick=()=>arenas.splice(Math.floor(Math.random()*arenas.length),1)[0];
   tour.active=true;tour.index=0;tour.points=Array(6).fill(0);tour.history=[];
   tour.events=[
@@ -318,32 +335,46 @@ function doPunch(car,charge=0){
   mode.onPunch?.(car);
   return true;
 }
-function onPunchHit(attacker,target,powered,shielded){
+function onPunchHit(attacker,target,powered,shielded,impactScore=320){
   const a=attacker.body.position,b=target.body.position;
   const dx=b.x-a.x,dz=b.z-a.z,distance=Math.hypot(dx,dz)||1;
-  const contact={x:b.x-dx/distance*.85,y:b.y+.15,z:b.z-dz/distance*.85};
-  effects.impact(contact,shielded?.6:powered?1.45:1);
+  const contact={x:b.x-dx/distance*.85,y:b.y+.25,z:b.z-dz/distance*.85};
+  effects.impact(contact,shielded?.65:powered?1.55:1.12);
   if(demo){mode?.onPunchHit?.(attacker,target,powered,shielded);return;}
-  sound.hit(powered?1.6:1,pan(target.body.position));
+  sound.hit(powered?1.65:1.1,pan(target.body.position));
   if(!attacker.punchConnected){attacker.punchConnected=true;attacker.record.punchHits++;}
+  const tag=shielded?'护盾抵挡':powered?'暴击':'重拳';
+  const tone=shielded?'crash':powered?'crit':'punch';
+  spawnPopup(contact,shielded?0:impactScore,tag,tone);
   if(ctx.isHuman(attacker)||ctx.isHuman(target)){
-    hitStopLeft=Math.max(.045,hitStopLeft);fovKick=powered?6:3;shake=powered?.48:.28;shakeDir.set(dx/distance,.15,dz/distance);
-    if(ctx.isHuman(target)){post.fx.flash=.48;post.fx.flashColor.set(1,.18,.25);}
+    hitStopLeft=Math.max(powered?.055:.045,hitStopLeft);fovKick=powered?6.5:3.5;shake=powered?.5:.3;shakeDir.set(dx/distance,.18,dz/distance);
+    if(ctx.isHuman(target)){post.fx.flash=.44;post.fx.flashColor.set(1,.18,.25);}
   }
   mode?.onPunchHit?.(attacker,target,powered,shielded);
 }
-function onCollision(a,b,closing,d){
-  const p={x:(a.body.position.x+b.body.position.x)*.5,y:(a.body.position.y+b.body.position.y)*.5,z:(a.body.position.z+b.body.position.z)*.5};
-  effects.collision(p,clamp(closing/15,.2,1.4));
+function onCollision(a,b,closing,d,impactScore=180){
+  const p={x:(a.body.position.x+b.body.position.x)*.5,y:(a.body.position.y+b.body.position.y)*.5+.15,z:(a.body.position.z+b.body.position.z)*.5};
+  effects.collision(p,clamp(closing/13,.25,1.6));
   if(!demo){
-    sound.collision(clamp(closing/15,.2,1.4),pan(p));
+    sound.collision(clamp(closing/14,.25,1.5),pan(p));
+    if(closing>11.5||(closing>9.2&&(ctx.isHuman(a)||ctx.isHuman(b))))spawnPopup(p,impactScore,closing>15?'爆撞':'猛撞',closing>15?'punch':'crash');
     if(ctx.isHuman(a)||ctx.isHuman(b)){
-      shake=Math.max(shake,clamp(closing/50,.08,.35));shakeDir.set(d.x,.25,d.z);
+      shake=Math.max(shake,clamp(closing/46,.08,.36));shakeDir.set(d.x,.25,d.z);
       if(closing>30/3.6)hitStopLeft=Math.max(.045,hitStopLeft);
       if(closing>13&&a.forward.dot(b.forward)<-.55)ui.announce('正面对撞！','',.7,'small');
     }
   }
   mode?.onCollision?.(a,b,closing,d);
+}
+function onHazardHit(car,pos,score,label){
+  effects.impact(pos,1.55);
+  if(demo)return;
+  sound.hit(1.5,pan(pos));
+  spawnPopup(pos,score,label||'重击','hazard');
+  if(ctx.isHuman(car)){
+    hitStopLeft=Math.max(.05,hitStopLeft);shake=Math.max(shake,.45);fovKick=Math.max(fovKick,5);
+    post.fx.flash=.36;post.fx.flashColor.set(1,.5,.12);
+  }
 }
 function fall(car){
   if(!car.active)return;
@@ -396,7 +427,7 @@ function fixedUpdate(dt){
   }
   processContacts(world,carsByBody,env);
   for(const car of cars)if(car.active&&car.body.position.y<mode.fallY(car))fall(car);
-  venues.current.tick?.(pdt);
+  venues.current.tick?.(pdt,cars,env);
   mode.update(pdt);
   effects.update(pdt,cars,true);
 }
@@ -490,7 +521,7 @@ function render(dt){
   uiClock+=dt;
   const hudVisible=(state==='playing'||state==='paused')&&!demo;
   if(uiClock>.06){uiClock=0;if(hudVisible)updateHUD();}
-  if(hudVisible&&!split)updateLabels();else ui.setLabels([]),ui.setIndicators([]);
+  if(hudVisible&&!split){updateLabels();updatePopups(visualDt);}else{ui.setLabels([]);ui.setIndicators([]);ui.setPopups?.([]);}
   const player=cars[0];
   sound.update({speed:player.speed,throttle:player.throttle,brake:player.brake,lateral:player.lateral,playing:state==='playing'&&!demo&&!mode?.locked,revving:state==='playing'&&mode?.locked,grounded:player.grounded,falling:!player.active,boost:player.effect==='boost'||player.driftBoost||player.padBoostEnd>simTime,finalRound:!!mode?.intense},dt);
 }
@@ -524,8 +555,8 @@ function updateLabels(){
     const distance=camera.position.distanceTo(point);
     const onScreen=cameraSpace.z<0&&Math.abs(projected.x)<.96&&Math.abs(projected.y)<.94;
     const label=duo()&&car.id<2?(car.id===0?'一号车手':'二号车手'):car.name;
-    labels.push({id:car.id,name:label+(car.stagger?' · 动摇 ×'+car.stagger:''),color:car.color,x:(projected.x*.5+.5)*innerWidth,y:(-.5*projected.y+.5)*innerHeight,visible:car.active&&onScreen&&(!car.isPlayer||duo())&&distance<(duo()?150:mode.labelRange??70),tag:mode.labelTag?.(car)});
-    if(!car.isPlayer&&car.active&&mode.indicators!==false&&!onScreen)indicators.push(indicator(car.id,car.name,point,car.color,'enemy'));
+    labels.push({id:car.id,name:label+(car.stagger?' · 动摇 ×'+car.stagger:''),color:car.color,team:car.team||'',x:(projected.x*.5+.5)*innerWidth,y:(-.5*projected.y+.5)*innerHeight,visible:car.active&&onScreen&&(!car.isPlayer||duo())&&distance<(duo()?150:mode.labelRange??70),tag:mode.labelTag?.(car)});
+    if(!car.isPlayer&&car.active&&mode.indicators!==false&&!onScreen)indicators.push(indicator(car.id,car.name,point,car.team==='blue'?'#2d8cff':car.team==='red'?'#ff3c4f':car.color,'enemy'));
   }
   for(const marker of extra){
     tmpV.set(marker.x,marker.y,marker.z);projected.copy(tmpV).project(camera);cameraSpace.copy(tmpV).applyMatrix4(camera.matrixWorldInverse);
@@ -533,6 +564,20 @@ function updateLabels(){
     if(!onScreen)indicators.push(indicator(marker.id,marker.name,tmpV,marker.color,marker.type||'item'));
   }
   ui.setLabels(labels);ui.setIndicators(indicators);
+}
+function updatePopups(dt){
+  const list=[];
+  for(let i=popups.length-1;i>=0;i--){
+    const p=popups[i];
+    p.age+=Math.max(0.016,dt);
+    if(p.age>=p.life){popups.splice(i,1);continue;}
+    const t=p.age/p.life;
+    tmpV.set(p.x,p.y+t*2.15,p.z);
+    projected.copy(tmpV).project(camera);cameraSpace.copy(tmpV).applyMatrix4(camera.matrixWorldInverse);
+    if(cameraSpace.z>=0||Math.abs(projected.x)>1.05||Math.abs(projected.y)>1.05)continue;
+    list.push({id:p.id,x:(projected.x*.5+.5)*innerWidth,y:(-.5*projected.y+.5)*innerHeight,score:p.score,tag:p.tag,tone:p.tone,t});
+  }
+  ui.setPopups?.(list);
 }
 function indicator(id,name,point,color,type){
   cameraSpace.copy(point).applyMatrix4(camera.matrixWorldInverse);

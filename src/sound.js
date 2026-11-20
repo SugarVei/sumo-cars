@@ -61,12 +61,18 @@ export class Sound {
       for (let i = 0; i < data.length; i++) data[i] = this.random() * 2 - 1;
 
       this.engineFilter = ctx.createBiquadFilter();
-      this.engineFilter.type = 'lowpass'; this.engineFilter.frequency.value = 650; this.engineFilter.Q.value = 0.65;
+      this.engineFilter.type = 'lowpass'; this.engineFilter.frequency.value = 720; this.engineFilter.Q.value = 1.1;
+      // Gentle soft-clipping saturator for punchy rally/V6 engine warmth.
+      const shaper = ctx.createWaveShaper();
+      const curve = new Float32Array(256);
+      for (let i = 0; i < 256; i++) { const x = i * 2 / 255 - 1; curve[i] = Math.tanh(x * 2.1); }
+      shaper.curve = curve; shaper.oversample = '2x';
       this.engineGain = ctx.createGain(); this.engineGain.gain.value = 0;
-      this.engineFilter.connect(this.engineGain); this.engineGain.connect(this.sfxBus);
-      this.engineLow = this._continuousOscillator('triangle', 42, 0.64, this.engineFilter);
-      this.engineHigh = this._continuousOscillator('sawtooth', 84, 0.16, this.engineFilter);
-      this.engineSub = this._continuousOscillator('sine', 21, 0.45, this.engineFilter);
+      this.engineFilter.connect(shaper); shaper.connect(this.engineGain); this.engineGain.connect(this.sfxBus);
+      this.engineLow = this._continuousOscillator('sawtooth', 44, 0.42, this.engineFilter);
+      this.engineMid = this._continuousOscillator('triangle', 66, 0.48, this.engineFilter);
+      this.engineHigh = this._continuousOscillator('sawtooth', 88, 0.18, this.engineFilter);
+      this.engineSub = this._continuousOscillator('sine', 22, 0.52, this.engineFilter);
       this.tire = this._continuousNoise('bandpass', 1650, 0.8);
       this.wind = this._continuousNoise('lowpass', 1100, 0.4);
       this.nextMusicAt = ctx.currentTime + 0.05;
@@ -209,13 +215,15 @@ export class Sound {
     const ctx = this.ctx, now = ctx.currentTime;
     const speed = Math.abs(Number(state.speed) || 0), throttle = Math.abs(Number(state.throttle) || 0);
     const playing = !!state.playing, falling = !!state.falling, revving = !!state.revving;
-    const targetRPM = 39 + Math.min(speed, 35) * 3.4 + throttle * 13 + (!state.grounded ? 14 : 0) + (state.boost ? 20 : 0);
-    this.rpm += (targetRPM - this.rpm) * (1 - Math.exp(-Math.max(0, dt) * 8));
-    this.engineLow.frequency.setTargetAtTime(this.rpm, now, 0.075);
-    this.engineHigh.frequency.setTargetAtTime(this.rpm * 2.015, now, 0.075);
-    this.engineSub.frequency.setTargetAtTime(this.rpm * 0.5, now, 0.09);
-    this.engineFilter.frequency.setTargetAtTime(420 + this.rpm * 3 + throttle * 480, now, 0.1);
-    this.engineGain.gain.setTargetAtTime((playing || revving) && !falling ? 0.022 + Math.min(speed, 25) * 0.00065 + throttle * 0.009 : 0, now, 0.08);
+    const gearSaw = speed > 6 ? ((speed % 9) / 9) * 10 : 0;
+    const targetRPM = 42 + Math.min(speed, 35) * 3.1 + gearSaw + throttle * 16 + (!state.grounded ? 15 : 0) + (state.boost ? 24 : 0);
+    this.rpm += (targetRPM - this.rpm) * (1 - Math.exp(-Math.max(0, dt) * 9.5));
+    this.engineLow.frequency.setTargetAtTime(this.rpm, now, 0.065);
+    this.engineMid.frequency.setTargetAtTime(this.rpm * 1.498, now, 0.065);
+    this.engineHigh.frequency.setTargetAtTime(this.rpm * 2.02, now, 0.065);
+    this.engineSub.frequency.setTargetAtTime(this.rpm * 0.5, now, 0.08);
+    this.engineFilter.frequency.setTargetAtTime(380 + this.rpm * 4.2 + throttle * 620 + (state.boost ? 480 : 0), now, 0.085);
+    this.engineGain.gain.setTargetAtTime((playing || revving) && !falling ? 0.032 + Math.min(speed, 26) * 0.00085 + throttle * 0.015 : 0, now, 0.07);
     const braking = typeof state.brake === 'number' ? state.brake : state.brake ? 1 : 0;
     const slip = Math.max(braking, clamp(Math.abs(Number(state.lateral) || 0) / 8, 0, 1));
     this.tire.gain.gain.setTargetAtTime(playing && state.grounded && speed > 3 ? Math.min(0.06, slip * speed * 0.0024) : 0, now, 0.08);
@@ -234,21 +242,23 @@ export class Sound {
   hit(power = 1, pan = 0) {
     if (!this._ready() || this.ctx.currentTime - this.lastHitAt < 0.025) return;
     this.lastHitAt = this.ctx.currentTime;
-    const amount = clamp(power, 0.4, 2.4);
-    this._osc(125, 0.2, 'triangle', 0.2 * amount, 36, pan);
-    this._osc(610, 0.12, 'triangle', 0.065 * amount, 210, pan);
-    this._osc(930, 0.08, 'sine', 0.045 * amount, 560, pan);
-    this._noise(0.13, 0.17 * amount, 2200, 450, 'bandpass', pan);
+    const amount = clamp(power, 0.45, 2.4);
+    // Heavy bass punch + crisp metallic fender crunch + coiled spring twang.
+    this._osc(135, 0.22, 'triangle', 0.24 * amount, 34, pan);
+    this._osc(310, 0.14, 'sawtooth', 0.075 * amount, 110, pan);
+    this._osc(760, 0.11, 'triangle', 0.075 * amount, 240, pan);
+    this._osc(1380, 0.075, 'sine', 0.055 * amount, 780, pan);
+    this._noise(0.14, 0.2 * amount, 2600, 520, 'bandpass', pan);
   }
 
   collision(strength = 1, pan = 0) {
-    if (!this._ready() || this.ctx.currentTime - this.lastCollisionAt < 0.055) return;
+    if (!this._ready() || this.ctx.currentTime - this.lastCollisionAt < 0.05) return;
     this.lastCollisionAt = this.ctx.currentTime;
-    const amount = clamp(strength, 0.15, 2.2);
-    this._osc(420 + amount * 130, 0.15, 'triangle', 0.055 * amount, 170, pan);
-    this._osc(1050, 0.085, 'sine', 0.025 * amount, 650, pan);
-    this._noise(0.09 + amount * 0.025, 0.095 * amount, 1600, 500, 'bandpass', pan);
-    if (amount > 1) this._osc(95, 0.12, 'sine', 0.07 * amount, 42, pan);
+    const amount = clamp(strength, 0.18, 2.2);
+    this._osc(460 + amount * 145, 0.15, 'triangle', 0.068 * amount, 160, pan);
+    this._osc(1280 + amount * 210, 0.08, 'sine', 0.036 * amount, 740, pan);
+    this._noise(0.1 + amount * 0.028, 0.12 * amount, 1950, 520, 'bandpass', pan);
+    if (amount > 0.75) this._osc(98, 0.14, 'sine', 0.09 * amount, 40, pan);
   }
 
   landing(strength = 1, pan = 0) {

@@ -6,9 +6,9 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 /** Three chassis classes. Stat bars are out of five and only describe the tuning below. */
 export const CAR_CLASSES={
-  dart:{id:'dart',name:'疾风',en:'DART',tagline:'轻巧灵活，起步最快；过弯好，但最怕被撞。',mass:96,accel:1.1,top:1.05,grip:1.07,turn:1.1,punch:.85,kits:['wing'],stats:{speed:5,accel:5,handling:5,weight:2,punch:2}},
-  rumbler:{id:'rumbler',name:'悍将',en:'RUMBLER',tagline:'均衡全能，没有明显短板。',mass:112,accel:1,top:1,grip:1,turn:1,punch:1,kits:['bar','antenna'],stats:{speed:4,accel:3,handling:3,weight:3,punch:3}},
-  bruiser:{id:'bruiser',name:'重锤',en:'BRUISER',tagline:'重型推土车；起步慢，但撞人最狠、最难被推动。',mass:142,accel:.86,top:.95,grip:.95,turn:.9,punch:1.25,kits:['plow','roof'],stats:{speed:3,accel:2,handling:2,weight:5,punch:5}},
+  dart:{id:'dart',name:'疾风',en:'DART',tagline:'复古拉力小钢炮，轻巧灵活、起步最快；过弯极快。',mass:96,accel:1.1,top:1.05,grip:1.07,turn:1.1,punch:.85,kits:['wing'],stats:{speed:5,accel:5,handling:5,weight:2,punch:2}},
+  rumbler:{id:'rumbler',name:'悍将',en:'RUMBLER',tagline:'巴哈沙漠运动皮卡，均衡全能，攻防兼备。',mass:112,accel:1,top:1,grip:1,turn:1,punch:1,kits:['bar','antenna'],stats:{speed:4,accel:3,handling:3,weight:3,punch:3}},
+  bruiser:{id:'bruiser',name:'重锤',en:'BRUISER',tagline:'宽体装甲重型越野，撞人最狠、最难被推动。',mass:142,accel:.86,top:.95,grip:.95,turn:.9,punch:1.25,kits:['plow','roof'],stats:{speed:3,accel:2,handling:2,weight:5,punch:5}},
 };
 
 /** Player paint jobs: body colour, stripe colour, underglow colour. */
@@ -83,7 +83,7 @@ export function createCars(world,scene,carMaterial){
     body.addShape(chassis,new CANNON.Vec3(0,-.28,0));body.addShape(cabin,new CANNON.Vec3(0,.28,.1));
     body.collisionFilterGroup=2;world.addBody(body);
     const entry=ROSTER[id];
-    const car={id,isPlayer:id===0,name:entry.name,number:entry.number,color:'#ffffff',glow:0xffffff,classId:entry.classId,stats:CAR_CLASSES[entry.classId],
+    const car={id,isPlayer:id===0,team:null,name:entry.name,number:entry.number,color:'#ffffff',glow:0xffffff,classId:entry.classId,stats:CAR_CLASSES[entry.classId],
       profile:PROFILES[entry.profile],body,visual:null,score:0,
       glove:'spring',rocket:null,cooldown:0,punchCooldown:2,punchAge:99,punchHits:new Set(),punchConnected:false,punchHeldAt:null,punchAngle:0,punchHeavy:0,stagger:0,active:true,respawnAt:0,invulnerable:0,ghostUntil:0,lastAttacker:null,lastHit:-99,
       effect:null,effectEnd:0,grounded:false,up:new CANNON.Vec3(0,1,0),forward:new CANNON.Vec3(0,0,-1),groundNormal:new CANNON.Vec3(0,1,0),
@@ -150,6 +150,7 @@ function acquirePunchAngle(car,simTime,env){
   let nearest=Math.min(10,GLOVES[car.glove].reach),angle=0;
   for(const target of env.cars){
     if(target===car||!target.active||target.invulnerable>simTime||target.ghostUntil>simTime)continue;
+    if(car.team&&target.team&&car.team===target.team)continue;
     const q=target.body.position,dx=q.x-p.x,dz=q.z-p.z,distance=Math.hypot(dx,dz);
     if(distance<=1||distance>nearest||Math.abs(q.y-p.y)>=2.2)continue;
     const offset=Math.atan2(-f.z*dx+f.x*dz,f.x*dx+f.z*dz);
@@ -259,6 +260,7 @@ export function driveCar(car,dt,env){
 }
 
 function canHit(car,target,now){
+  if(car.team&&target.team&&car.team===target.team)return false;
   return target!==car&&target.active&&!car.punchHits.has(target.id)&&target.invulnerable<=now&&target.ghostUntil<=now&&car.ghostUntil<=now;
 }
 
@@ -270,24 +272,32 @@ function hitCar(car,target,dir,env){
   const closing=clamp(b.velocity.dot(dir)-t.velocity.dot(dir),0,26);
   const base=(car.effect==='power'?20:12)*car.stats.punch+.24*closing;
   const power=base*(1+1.5*car.punchHeavy)*(1+.1*target.stagger)*(car.nitroEnd>env.simTime?1.2:1)*(env.punchScale||1)*(shielded?.15:1);
+  const impactScore=Math.round(clamp(power*25*(1+(car.punchHeavy||0)*.35)*(shielded?.35:1),80,999));
   if(car.glove==='hook'){
     // Equal and opposite impulses keep a rescue hook useful near the ledge, and a heavy target hard to reel in.
     impulse.set(dir.x*70*power,0,dir.z*70*power);
     b.applyImpulse(impulse);impulse.negate(impulse);t.applyImpulse(impulse);
   }else if(env.punchStyle==='side'){
     const sideSign=Math.sign((t.position.x-b.position.x)*(-dir.z)+(t.position.z-b.position.z)*dir.x)||(Math.random()<.5?-1:1);
-    impulse.set((-dir.z*sideSign*.55+dir.x*.08)*110*power,220*(shielded?.3:1),(dir.x*sideSign*.55+dir.z*.08)*110*power);
+    impulse.set((-dir.z*sideSign*.55+dir.x*.08)*110*power,240*(shielded?.3:1),(dir.x*sideSign*.55+dir.z*.08)*110*power);
     t.applyImpulse(impulse);
-    if(!shielded){t.angularVelocity.y+=-sideSign*(powered?4.5:3);t.velocity.x*=.86;t.velocity.z*=.86;}
+    if(!shielded){t.angularVelocity.y+=-sideSign*(powered?4.8:3.2);t.velocity.x*=.86;t.velocity.z*=.86;}
   }else{
-    const weight=car.glove==='hammer'?.82:car.glove==='rocket'?.74:1;
-    impulse.set(dir.x*110*power*weight,110*(3.2+1.8*car.punchHeavy)*(shielded?.3:1),dir.z*110*power*weight);
-    impulsePoint.set(-dir.x*.4,.16,-dir.z*.4);
+    const weight=car.glove==='hammer'?.84:car.glove==='rocket'?.78:1;
+    const lift=110*(4.1+2.1*car.punchHeavy)*(shielded?.28:1);
+    impulse.set(dir.x*114*power*weight,lift,dir.z*114*power*weight);
+    impulsePoint.set(-dir.x*.46,.28,-dir.z*.46);
     t.applyImpulse(impulse,impulsePoint);
+    if(!shielded){
+      const tumble=(powered?4.2:2.4)*weight;
+      t.angularVelocity.x+=(-dir.z)*tumble;
+      t.angularVelocity.z+=(dir.x)*tumble;
+      t.angularVelocity.y+=(Math.random()-.5)*(powered?4.5:2.6);
+    }
   }
   target.lastAttacker=car.id;target.lastHit=env.simTime;target.hitFlash=1;
   if(!shielded)target.stagger=Math.min(5,target.stagger+1);
-  env.hooks?.punchHit?.(car,target,powered,shielded);
+  env.hooks?.punchHit?.(car,target,powered,shielded,impactScore);
 }
 
 function advanceRocket(car,dt,env){
@@ -355,10 +365,13 @@ export function processContacts(world,carsByBody,env){
     const d=b.body.position.vsub(a.body.position);d.y=0;d.normalize();
     const av=a.previousVelocity.dot(d),bv=-b.previousVelocity.dot(d);
     const closing=av+bv,key=a.id<b.id?a.id*8+b.id:b.id*8+a.id;
+    const sameTeam=Boolean(a.team&&b.team&&a.team===b.team);
     if(closing>3&&env.simTime-(contactTimes.get(key)??-99)>.45){
       contactTimes.set(key,env.simTime);
-      env.hooks?.collision?.(a,b,closing,d);
+      const impactScore=Math.round(clamp(closing*19,50,780));
+      env.hooks?.collision?.(a,b,closing,d,impactScore);
     }
+    if(sameTeam)continue;
     const pushA=a.throttle>.3&&a.forward.dot(d)>.8&&av>.4&&av>bv+.2;
     const pushB=b.throttle>.3&&b.forward.dot(d)<-.8&&bv>.4&&bv>av+.2;
     if(((av>2.5&&av>bv+1&&a.forward.dot(d)>.25)||pushA)&&b.invulnerable<env.simTime){b.lastAttacker=a.id;b.lastHit=env.simTime;env.hooks?.shove?.(a,b,av-bv);}

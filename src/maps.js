@@ -4,12 +4,13 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createArena } from './visuals.js';
 
 export const MAPS = [
-  { id: 'meadow', look: 'day', night: 0, name: '浮岛草原', title: 'SKY MEADOW', subtitle: '最初的浮空擂台 · 开阔草地', accent: '#dfff35', grip: 1, sky: { zenith: 0x3685cf, horizon: 0xb9e5fa, ground: 0x173558, sunColor: 0xffefd6, sunIntensity: 2.5, ambientIntensity: 0.6 } },
+  { id: 'testpit', look: 'day', night: 0, name: '工业测试场', title: 'TEST ARENA', subtitle: '撞色工业网格 · 高空摆锤 · 下沉深坑 · 弹珠鼓包', accent: '#ff7a24', grip: 1.03, sky: { zenith: 0x3b98eb, horizon: 0xcde9ff, ground: 0x384352, sunColor: 0xfff7e8, sunIntensity: 2.85, ambientIntensity: 0.78, sunDirection: [-0.45, 0.86, 0.32], fogNear: 130, fogFar: 380, envIntensity: 0.72 } },
+  { id: 'meadow', look: 'day', night: 0, name: '浮岛草原', title: 'SKY MEADOW', subtitle: '最初的浮空擂台 · 开阔草地', accent: '#dfff35', grip: 1, sky: { zenith: 0x3685cf, horizon: 0xb9e5fa, ground: 0x173558, sunColor: 0xffefd6, sunIntensity: 2.5, ambientIntensity: 0.65 } },
   { id: 'neon', look: 'night', night: 1, name: '霓虹港湾', title: 'NEON HARBOR', subtitle: '集装箱巷道 · 高架码头 · 双跳台', accent: '#53f4e8', grip: 1, sky: { zenith: 0x111629, horizon: 0x433363, ground: 0x060e24, sunColor: 0xbccaff, sunIntensity: 1.4, ambientIntensity: 0.75 } },
-  { id: 'mesa', look: 'sunset', night: 0.15, name: '赤岩峡谷', title: 'REDROCK MESA', subtitle: '宽阔漂移线 · 砂岩石柱', accent: '#ffb25a', grip: 0.88, sky: { zenith: 0x718dc6, horizon: 0xf1c895, ground: 0x653c48, sunColor: 0xffcc88, sunIntensity: 2.7, ambientIntensity: 0.6 } },
+  { id: 'mesa', look: 'sunset', night: 0.15, name: '赤岩峡谷', title: 'REDROCK MESA', subtitle: '宽阔漂移线 · 砂岩石柱', accent: '#ffb25a', grip: 0.88, sky: { zenith: 0x718dc6, horizon: 0xf1c895, ground: 0x653c48, sunColor: 0xffcc88, sunIntensity: 2.7, ambientIntensity: 0.62 } },
   { id: 'glacier', look: 'ice', night: 0.42, name: '极光冰港', title: 'AURORA GLACIER', subtitle: '湿滑冰面 · 冰晶山脊 · 极光夜空', accent: '#9aefff', grip: 0.78, sky: { zenith: 0x081e36, horizon: 0x5b8caa, ground: 0x102f57, sunColor: 0xc5eaff, sunIntensity: 1.8, ambientIntensity: 0.8 } },
-  { id: 'sakura', look: 'day', night: 0.05, name: '樱庭回廊', title: 'SAKURA COURT', subtitle: '庭园门廊 · 错层平台 · 石砌转角', accent: '#ffaccb', grip: 1.03, sky: { zenith: 0x719bc8, horizon: 0xf5dbe1, ground: 0x5d536c, sunColor: 0xffe6cf, sunIntensity: 2.3, ambientIntensity: 0.7 } },
-  { id: 'orbital', look: 'space', night: 0.9, name: '轨道基地', title: 'ORBITAL STATION', subtitle: '反应堆核心 · 弹射跳台 · 无边天际', accent: '#a6a0ff', grip: 0.96, sky: { zenith: 0x040715, horizon: 0x18213d, ground: 0x030510, sunColor: 0xd6e3ff, sunIntensity: 2.1, ambientIntensity: 0.5 } },
+  { id: 'sakura', look: 'day', night: 0.05, name: '樱庭回廊', title: 'SAKURA COURT', subtitle: '庭园门廊 · 错层平台 · 石砌转角', accent: '#ffaccb', grip: 1.03, sky: { zenith: 0x719bc8, horizon: 0xf5dbe1, ground: 0x5d536c, sunColor: 0xffe6cf, sunIntensity: 2.35, ambientIntensity: 0.72 } },
+  { id: 'orbital', look: 'space', night: 0.9, name: '轨道基地', title: 'ORBITAL STATION', subtitle: '反应堆核心 · 弹射跳台 · 无边天际', accent: '#a6a0ff', grip: 0.96, sky: { zenith: 0x040715, horizon: 0x18213d, ground: 0x030510, sunColor: 0xd6e3ff, sunIntensity: 2.1, ambientIntensity: 0.52 } },
 ];
 
 const TAU = Math.PI * 2;
@@ -54,6 +55,56 @@ function texture(image, repeats = 1) {
 function floorMaterial(id) {
   const S = 1024;
   const [image, ctx] = canvas(S), [rImage, rCtx] = canvas(S), random = rng(0x72fd9 + id.length * 317);
+  if (id === 'testpit') {
+    // 工业测试场整张大色块防滑网格地坪（活力亮橙 + 荧光草绿 + 中央黑黄深坑警示圈 + 精致工业测试网格）
+    ctx.fillStyle = '#ea7b28'; ctx.fillRect(0, 0, S, S);
+    // 左下/右上活力草绿大分区（几何斜切撞色，如参考视频高饱和测试地坪）
+    ctx.fillStyle = '#75ca36';
+    ctx.fillRect(0, 0, S / 2, S / 2);
+    ctx.fillRect(S / 2, S / 2, S / 2, S / 2);
+    // 中心过渡灰白测试带
+    ctx.fillStyle = '#e7edf2';
+    ctx.fillRect(S * 0.36, S * 0.36, S * 0.28, S * 0.28);
+    // 细密工业防滑网格线（每 32px 一小格，每 128px 一粗测量格）
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.lineWidth = 1.5;
+    for (let i = 0; i <= S; i += 32) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(S, i); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(18,26,38,0.22)'; ctx.lineWidth = 3;
+    for (let i = 0; i <= S; i += 128) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, S); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(S, i); ctx.stroke();
+    }
+    // 蓝/红阵营半场装饰线与测试标尺
+    ctx.strokeStyle = 'rgba(42,130,255,0.65)'; ctx.lineWidth = 8; ctx.strokeRect(44, 44, S - 88, 22);
+    ctx.strokeStyle = 'rgba(240,62,74,0.65)'; ctx.lineWidth = 8; ctx.strokeRect(44, S - 66, S - 88, 22);
+    // 中央深坑外围黑黄警戒斜纹框（坑洞约占中心 4.6/24 = 0.192 半径 -> 394..630px）
+    const p0 = S * (0.5 - 4.6 / 48) - 24, pSize = S * (9.2 / 48) + 48;
+    ctx.save();
+    ctx.fillStyle = '#f8cb2e'; ctx.fillRect(p0, p0, pSize, pSize);
+    ctx.beginPath(); ctx.rect(p0, p0, pSize, pSize); ctx.clip();
+    ctx.fillStyle = '#1b2028';
+    for (let k = -S; k < S * 2; k += 28) {
+      ctx.beginPath(); ctx.moveTo(k, p0); ctx.lineTo(k + 14, p0); ctx.lineTo(k + 14 - pSize, p0 + pSize); ctx.lineTo(k - pSize, p0 + pSize); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    // 十字中心测试瞄准线与小圆点
+    ctx.strokeStyle = 'rgba(255,255,255,0.65)'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, S * 0.28, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.38)'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, S * 0.42, 0, TAU); ctx.stroke();
+    // 轻微防滑颗粒粗糙度贴图（哑光偏半亮，不刺眼反光）
+    rCtx.fillStyle = '#b4b4b4'; rCtx.fillRect(0, 0, S, S);
+    rCtx.strokeStyle = '#d8d8d8'; rCtx.lineWidth = 2;
+    for (let i = 0; i <= S; i += 32) {
+      rCtx.beginPath(); rCtx.moveTo(i, 0); rCtx.lineTo(i, S); rCtx.stroke();
+      rCtx.beginPath(); rCtx.moveTo(0, i); rCtx.lineTo(S, i); rCtx.stroke();
+    }
+    const map = texture(image, 1); map.wrapS = map.wrapT = THREE.ClampToEdgeWrapping;
+    const roughnessMap = texture(rImage, 1); roughnessMap.colorSpace = THREE.NoColorSpace; roughnessMap.wrapS = roughnessMap.wrapT = THREE.ClampToEdgeWrapping;
+    return mat(0xffffff, { map, roughnessMap, roughness: 0.72, metalness: 0.06 });
+  }
   const palettes = { neon: [34, 46, 62], mesa: [186, 114, 66], glacier: [162, 206, 226], sakura: [164, 178, 170], orbital: [54, 68, 86] };
   const base = palettes[id], data = ctx.createImageData(S, S);
   const rBase = { neon: 118, mesa: 230, glacier: 52, sakura: 205, orbital: 108 }[id];
@@ -140,12 +191,14 @@ function glowing(color, intensity = 0.7) { return mat(color, { emissive: color, 
 function makeThemeArena(parent, world, groundMaterial, descriptor) {
   const platform = new THREE.Group(), scenery = new THREE.Group(); parent.add(platform, scenery);
   platform.name = `${descriptor.title} / PLAYABLE`; scenery.name = `${descriptor.title} / SCENERY`;
-  const staticBatch = makeBatch(platform), distantBatch = makeBatch(scenery), records = [], dynamicProps = [], animated = [];
+  const staticBatch = makeBatch(platform), distantBatch = makeBatch(scenery), records = [], dynamicProps = [], animated = [], tickers = [];
   const accent = new THREE.Color(descriptor.accent);
   const dark = mat(0x243241, { metalness: 0.22 }), white = mat(0xdce5df), warm = mat(0xeab55c);
-  const sideColors = { neon: 0x21354a, mesa: 0x985139, glacier: 0x5c8fae, sakura: 0x716e71, orbital: 0x2a3248 };
-  const side = mat(sideColors[descriptor.id], { roughness: descriptor.id === 'glacier' ? 0.3 : 0.9 });
+  const sideColors = { testpit: 0x303744, neon: 0x21354a, mesa: 0x985139, glacier: 0x5c8fae, sakura: 0x716e71, orbital: 0x2a3248 };
+  const side = mat(sideColors[descriptor.id], { roughness: descriptor.id === 'glacier' ? 0.3 : 0.88 });
   let halfSize = 24, shrinking = false;
+  const basePitHalf = descriptor.id === 'testpit' ? 4.6 : 0;
+  let pitHalf = basePitHalf;
 
   function solidBox(size, position, material = dark, rotation = ZERO) {
     staticBatch.add(new THREE.BoxGeometry(...size), material, position, rotation);
@@ -195,9 +248,35 @@ function makeThemeArena(parent, world, groundMaterial, descriptor) {
     if (top) distantBatch.add(new THREE.CylinderGeometry(radius, radius, 0.22, 7), top, [x, y + 0.05, z]);
   }
 
-  const floor = solidBox([48, 1.5, 48], [0, -0.75, 0], side);
-  // The textured top is visual-only; the finite solid box remains the exact floor.
-  const top = new THREE.Mesh(new THREE.PlaneGeometry(48, 48), floorMaterial(descriptor.id)); top.rotation.x = -Math.PI / 2; top.position.y = 0.003; top.receiveShadow = true; platform.add(top);
+  const floorBodies = new Set();
+  let floor;
+  if (descriptor.id === 'testpit') {
+    // 4 块实心物理底板拼接成回字形，在中央留下真实的 9.2m x 9.2m 下沉方形深坑！
+    const p = basePitHalf, band = 24 - p;
+    floor = solidBox([48, 1.5, band], [0, -0.75, -(p + band / 2)], side); floorBodies.add(floor);
+    floorBodies.add(solidBox([48, 1.5, band], [0, -0.75, p + band / 2], side));
+    floorBodies.add(solidBox([band, 1.5, p * 2], [-(p + band / 2), -0.75, 0], side));
+    floorBodies.add(solidBox([band, 1.5, p * 2], [p + band / 2, -0.75, 0], side));
+    // 用带方形内孔的 ShapeGeometry 铺设完整无接缝的大色块防滑地坪贴图
+    const shape = new THREE.Shape();
+    shape.moveTo(-24, -24); shape.lineTo(24, -24); shape.lineTo(24, 24); shape.lineTo(-24, 24); shape.closePath();
+    const hole = new THREE.Path();
+    hole.moveTo(-p, -p); hole.lineTo(-p, p); hole.lineTo(p, p); hole.lineTo(p, -p); hole.closePath();
+    shape.holes.push(hole);
+    const topGeo = new THREE.ShapeGeometry(shape);
+    const posAttr = topGeo.attributes.position, uvArr = new Float32Array(posAttr.count * 2);
+    for (let i = 0; i < posAttr.count; i++) {
+      uvArr[i * 2] = (posAttr.getX(i) + 24) / 48;
+      uvArr[i * 2 + 1] = 1 - (posAttr.getY(i) + 24) / 48;
+    }
+    topGeo.setAttribute('uv', new THREE.BufferAttribute(uvArr, 2));
+    const top = new THREE.Mesh(topGeo, floorMaterial('testpit'));
+    top.rotation.x = -Math.PI / 2; top.position.y = 0.004; top.receiveShadow = true; platform.add(top);
+  } else {
+    floor = solidBox([48, 1.5, 48], [0, -0.75, 0], side); floorBodies.add(floor);
+    // The textured top is visual-only; the finite solid box remains the exact floor.
+    const top = new THREE.Mesh(new THREE.PlaneGeometry(48, 48), floorMaterial(descriptor.id)); top.rotation.x = -Math.PI / 2; top.position.y = 0.003; top.receiveShadow = true; platform.add(top);
+  }
   const edgeLights = [];
   const border = mat(0x24303b), borderLight = mat(accent, { emissive: accent, emissiveIntensity: 0.2 });
   for (let i = 0; i < 4; i++) {
@@ -209,17 +288,18 @@ function makeThemeArena(parent, world, groundMaterial, descriptor) {
     strip.position.set(...(alongX ? [0, 0.075, sign * 23.9] : [sign * 23.9, 0.075, 0])); platform.add(strip);
     edgeLights.push({ axis: alongX ? 'z' : 'x', sign, material });
   }
-  const c = { descriptor, platform, scenery, staticBatch, distantBatch, solidBox, solidCylinder, artBox, ramp, paintRing, movableCrate, distantIsland, animated, dark, white, warm, side, accent };
-  ({ neon: buildNeon, mesa: buildMesa, glacier: buildGlacier, sakura: buildSakura, orbital: buildOrbital })[descriptor.id](c);
+  const c = { descriptor, platform, scenery, staticBatch, distantBatch, solidBox, solidCylinder, artBox, ramp, paintRing, movableCrate, distantIsland, animated, tickers, dark, white, warm, side, accent, parent, world, groundMaterial, dynamicProps, basePitHalf };
+  ({ testpit: buildTestPit, neon: buildNeon, mesa: buildMesa, glacier: buildGlacier, sakura: buildSakura, orbital: buildOrbital })[descriptor.id](c);
   staticBatch.flush(); distantBatch.flush();
   // Skyline, distant islands and orbital scenery never shadow the playfield.
   scenery.traverse(object=>{object.castShadow=false;object.receiveShadow=false;});
   const arena = {
-    get halfSize() { return halfSize; }, dynamicProps, floor,
+    get halfSize() { return halfSize; }, get pitHalf() { return pitHalf; }, dynamicProps, floor, floorBodies,
     setRound(round = 1, total = 6, shrink = 0) {
       shrinking = shrink > 0;
       halfSize = 24 * Math.pow(17 / 24, Math.min(1, Math.max(0, (round - 1) / Math.max(1, total - 1)))) * (1 - .28 * shrink);
       const scale = halfSize / 24; platform.scale.setScalar(scale);
+      pitHalf = basePitHalf * scale;
       for (const record of records) {
         const b = record.body; b.position.set(...record.position.map(n => n * scale));
         if (record.type === 'box') { const shape = b.shapes[0]; shape.halfExtents.set(...record.size.map(n => n * scale / 2)); shape.updateConvexPolyhedronRepresentation(); shape.updateBoundingSphereRadius(); }
@@ -249,8 +329,221 @@ function makeThemeArena(parent, world, groundMaterial, descriptor) {
       }
       for (const callback of animated) callback(dt, time);
     },
+    tick(dt, cars, env) {
+      const scale = halfSize / 24;
+      for (const fn of tickers) fn(dt, cars, env, scale);
+    },
   };
   arena.setRound(1, 6); return arena;
+}
+
+function buildTestPit(c) {
+  const { solidBox, solidCylinder, artBox, ramp, staticBatch, distantBatch, platform, parent, world, groundMaterial, dynamicProps, animated, tickers, basePitHalf } = c;
+  const steelDark = mat(0x2b313c, { roughness: 0.45, metalness: 0.52 });
+  const wallCharcoal = mat(0x363d4a, { roughness: 0.62, metalness: 0.25 });
+  const safetyYellow = mat(0xf6c91c, { roughness: 0.38, metalness: 0.16 });
+  const ropeRed = mat(0xe82b3a, { roughness: 0.42, metalness: 0.1 });
+  const ropeWhite = mat(0xf4f7fb, { roughness: 0.4, metalness: 0.08 });
+  const ropeBlue = mat(0x1f7aff, { roughness: 0.42, metalness: 0.1 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xe6eef6, roughness: 0.18, metalness: 0.92 });
+  const scaffoldMetal = mat(0x9aa6b4, { roughness: 0.42, metalness: 0.68 });
+  const ironBallMat = new THREE.MeshStandardMaterial({ color: 0x1e232c, roughness: 0.34, metalness: 0.82 });
+
+  // 1) 中央下沉方形深坑内壁 + 黄色工业护栏（四面中间各留 4.6m 敞口缺口，既醒目又能撞飞落坑！）
+  const p = basePitHalf;
+  for (const s of [-1, 1]) {
+    artBox([p * 2 + 0.4, 7.6, 0.36], [0, -4.2, s * (p + 0.18)], steelDark);
+    artBox([0.36, 7.6, p * 2 + 0.4], [s * (p + 0.18), -4.2, 0], steelDark);
+    // 坑口四角短护栏立柱 + 亮黄半栏杆（只封住四个拐角各 2.2m，中间留宽口）
+    for (const c2 of [-1, 1]) {
+      solidCylinder(0.16, 1.05, [s * (p + 0.48), 0.52, c2 * (p + 0.48)], safetyYellow, 8);
+      artBox([2.1, 0.14, 0.14], [s * (p - 0.55), 0.88, c2 * (p + 0.48)], safetyYellow);
+      artBox([2.1, 0.12, 0.12], [s * (p - 0.55), 0.46, c2 * (p + 0.48)], safetyYellow);
+      artBox([0.14, 0.14, 2.1], [s * (p + 0.48), 0.88, c2 * (p - 0.55)], safetyYellow);
+      artBox([0.12, 0.12, 2.1], [s * (p + 0.48), 0.46, c2 * (p - 0.55)], safetyYellow);
+    }
+  }
+  // 坑底幽深工业暗格视觉底座（不阻挡掉落淘汰）
+  artBox([p * 2 + 1.2, 0.4, p * 2 + 1.2], [0, -8.2, 0], mat(0x0f141d, { roughness: 0.9 }));
+
+  // 2) 炭灰工业挡墙（北侧左右两段对称，中央留出宽 12m 出界区）+ 摔角场红/白/蓝三色边绳柱段
+  for (const s of [-1, 1]) {
+    solidBox([10.5, 4.6, 1.15], [s * 14.2, 2.3, -22.6], wallCharcoal);
+    artBox([10.8, 0.32, 1.35], [s * 14.2, 4.72, -22.6], safetyYellow);
+    for (let rx = -4.2; rx <= 4.2; rx += 2.1) {
+      artBox([0.36, 4.5, 1.45], [s * 14.2 + rx, 2.25, -22.6], steelDark);
+    }
+  }
+  // 四角摔角场柱 + 东/西两侧各两段红白蓝三色弹性边绳装饰护栏（正中大段敞开，保留推落擂台爽感）
+  const ropeCols = [ropeRed, ropeWhite, ropeBlue];
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      solidCylinder(0.32, 2.85, [sx * 22.8, 1.42, sz * 22.8], sz < 0 ? ropeBlue : ropeRed, 10);
+      staticBatch.add(new THREE.SphereGeometry(0.38, 12, 8), safetyYellow, [sx * 22.8, 2.95, sz * 22.8]);
+      // 沿 X 边短段三色边绳（每角延伸 7.5m）
+      const midX = sx * 18.8, midZ = sz * 22.8;
+      solidCylinder(0.22, 2.55, [sx * 14.8, 1.28, midZ], steelDark, 8);
+      for (let r = 0; r < 3; r++) {
+        artBox([7.9, 0.14, 0.14], [midX, 0.78 + r * 0.62, midZ], ropeCols[r]);
+      }
+      // 沿 Z 边短段三色边绳（每角延伸 7.5m）
+      const sideX = sx * 22.8, sideZ = sz * 18.8;
+      solidCylinder(0.22, 2.55, [sideX, 1.28, sz * 14.8], steelDark, 8);
+      for (let r = 0; r < 3; r++) {
+        artBox([0.14, 0.14, 7.9], [sideX, 0.78 + r * 0.62, sideZ], ropeCols[r]);
+      }
+    }
+  }
+
+  // 3) 黄色大撞击挡板 × 2 + 黑色工业斜坡跳台 × 2
+  for (const [x, z, yaw] of [[-15.2, -11.5, 0.38], [15.2, 11.5, 0.38]]) {
+    solidBox([4.8, 1.55, 0.85], [x, 0.78, z], safetyYellow, [0, yaw, 0]);
+    artBox([4.95, 0.24, 0.96], [x, 1.58, z], steelDark, [0, yaw, 0]);
+    artBox([4.95, 0.24, 0.96], [x, 0.18, z], steelDark, [0, yaw, 0]);
+  }
+  ramp(-16.2, 12.6, 4.8, 6.8, 1.75, Math.PI * 0.25, steelDark);
+  ramp(16.2, -12.6, 4.8, 6.8, 1.75, -Math.PI * 0.75, steelDark);
+
+  // 4) 2 组高空物理摆锤铁球（对称架设在 x = ±12.4，沿 Z 轴方向摆动，绝不阻挡出生点）
+  const pendulums = [];
+  for (const [idx, px] of [[-12.4, 0], [12.4, Math.PI]].entries()) {
+    const xPos = px[0], phase = px[1];
+    // 龙门高架立柱（立在边线处 z = ±17.8）与顶梁
+    solidCylinder(0.45, 11.4, [xPos, 5.7, -17.8], steelDark, 10);
+    solidCylinder(0.45, 11.4, [xPos, 5.7, 17.8], steelDark, 10);
+    artBox([0.75, 0.75, 36.4], [xPos, 11.3, 0], safetyYellow);
+    artBox([1.2, 1.1, 1.6], [xPos, 11.3, 0], steelDark);
+    const pivot = new THREE.Group();
+    pivot.position.set(xPos, 11.0, 0);
+    platform.add(pivot);
+    const armLen = 9.25;
+    const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, armLen, 8), scaffoldMetal);
+    cable.position.y = -armLen / 2; cable.castShadow = true; pivot.add(cable);
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(1.52, 22, 16), ironBallMat);
+    ball.position.y = -armLen; ball.castShadow = true; ball.receiveShadow = true; pivot.add(ball);
+    const band = new THREE.Mesh(new THREE.TorusGeometry(1.52, 0.14, 10, 28), safetyYellow);
+    band.rotation.x = Math.PI / 2; band.position.y = -armLen; pivot.add(band);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.62, 0.45, 12), safetyYellow);
+    cap.position.y = -armLen + 1.55; pivot.add(cap);
+    pendulums.push({ pivot, baseX: xPos, armLen, phase, angle: 0, angVel: 0, hitAt: new Map() });
+  }
+  const ballPos = new THREE.Vector3();
+  animated.push((dt, time) => {
+    for (const p of pendulums) {
+      const omega = 1.68, amp = 0.76;
+      p.angle = Math.sin(time * omega + p.phase) * amp;
+      p.angVel = Math.cos(time * omega + p.phase) * amp * omega;
+      p.pivot.rotation.x = p.angle;
+    }
+  });
+  tickers.push((dt, cars, env, scale) => {
+    if (!cars || !env) return;
+    const now = env.simTime || 0;
+    for (const p of pendulums) {
+      const bx = p.baseX * scale;
+      const by = (11.0 - Math.cos(p.angle) * p.armLen) * scale;
+      const bz = Math.sin(p.angle) * p.armLen * scale;
+      if (by > 2.9 * scale) continue;
+      const hitRad = 2.45 * Math.max(0.72, scale);
+      for (const car of cars) {
+        if (!car.active || car.invulnerable > now || car.ghostUntil > now) continue;
+        if (now - (p.hitAt.get(car.id) ?? -99) < 0.75) continue;
+        const cp = car.body.position;
+        const dx = cp.x - bx, dy = cp.y - by, dz = cp.z - bz;
+        if (Math.abs(dy) > 2.4 || dx * dx + dz * dz > hitRad * hitRad) continue;
+        p.hitAt.set(car.id, now);
+        // 结合摆锤切向速度与径向推开，形成极具戏剧性的重击抛飞翻滚！
+        const tangZ = p.angVel * p.armLen * scale;
+        const len = Math.hypot(dx, dz) || 1;
+        const dirX = dx / len * 0.45, dirZ = (dz / len * 0.55) + Math.sign(tangZ || 1) * 0.85;
+        const dLen = Math.hypot(dirX, dirZ) || 1;
+        const fx = dirX / dLen, fz = dirZ / dLen;
+        const kick = 2350 * (car.stats?.mass ? car.stats.mass / 110 : 1);
+        car.body.applyImpulse(new CANNON.Vec3(fx * kick, 680, fz * kick), new CANNON.Vec3(-fx * 0.4, 0.35, -fz * 0.4));
+        car.body.angularVelocity.x += -fz * 4.4;
+        car.body.angularVelocity.z += fx * 4.4;
+        car.hitFlash = 1;
+        ballPos.set(bx, Math.max(0.9, by), bz);
+        const score = Math.round(520 + Math.min(260, Math.abs(tangZ) * 26));
+        env.hooks?.hazardHit?.(car, ballPos.clone(), score, '摆锤重击');
+      }
+    }
+  });
+
+  // 5) 2 个银色弹珠台反弹鼓包（位于 z = ±12.6, x = 0，被碰瞬间弹飞 + 闪光回弹！）
+  const bumpers = [];
+  for (const [idx, bz] of [-12.6, 12.6].entries()) {
+    solidCylinder(1.22, 1.35, [0, 0.675, bz], steelDark, 14);
+    const group = new THREE.Group();
+    group.position.set(0, 0, bz);
+    platform.add(group);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(1.48, 1.35, 0.56, 20), chrome);
+    cap.position.y = 1.25; cap.castShadow = true; group.add(cap);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(1.18, 18, 10, 0, TAU, 0, Math.PI * 0.5), chrome);
+    dome.position.y = 1.5; dome.scale.set(1, 0.42, 1); group.add(dome);
+    const ringMat = new THREE.MeshStandardMaterial({ color: idx === 0 ? 0xff4038 : 0x2288ff, emissive: idx === 0 ? 0xff4038 : 0x2288ff, emissiveIntensity: 0.9, roughness: 0.25 });
+    const glowRing = new THREE.Mesh(new THREE.TorusGeometry(1.42, 0.14, 10, 28), ringMat);
+    glowRing.rotation.x = Math.PI / 2; glowRing.position.y = 0.95; group.add(glowRing);
+    bumpers.push({ group, ringMat, baseZ: bz, pulse: 0, hitAt: new Map() });
+  }
+  animated.push((dt) => {
+    for (const b of bumpers) {
+      b.pulse = Math.max(0, b.pulse - dt * 4.5);
+      const s = 1 + b.pulse * 0.24;
+      b.group.scale.set(s, 1 + b.pulse * 0.14, s);
+      b.ringMat.emissiveIntensity = 0.85 + b.pulse * 3.2;
+    }
+  });
+  tickers.push((dt, cars, env, scale) => {
+    if (!cars || !env) return;
+    const now = env.simTime || 0;
+    const hitRad = 2.65 * Math.max(0.72, scale);
+    for (const b of bumpers) {
+      const bz = b.baseZ * scale;
+      for (const car of cars) {
+        if (!car.active || car.ghostUntil > now) continue;
+        if (now - (b.hitAt.get(car.id) ?? -99) < 0.45) continue;
+        const cp = car.body.position;
+        const dx = cp.x, dz = cp.z - bz;
+        if (Math.abs(cp.y) > 2.2 || dx * dx + dz * dz > hitRad * hitRad) continue;
+        b.hitAt.set(car.id, now); b.pulse = 1;
+        const len = Math.hypot(dx, dz) || 1;
+        const fx = dx / len, fz = dz / len;
+        const kick = 1880 * (car.stats?.mass ? car.stats.mass / 110 : 1);
+        car.body.applyImpulse(new CANNON.Vec3(fx * kick, 360, fz * kick));
+        car.hitFlash = 0.85;
+        env.hooks?.hazardHit?.(car, new THREE.Vector3(0, 1.3, bz), 320, '弹珠弹飞');
+      }
+    }
+  });
+
+  // 6) 可撞飞彩色工业油漆桶 × 4（替代表面箱子，散落在测试场边缘）
+  for (const [bx, bz, col] of [[-8.6, 17.6, 0xff4632], [-7.2, 18.4, 0x2685ff], [8.6, -17.6, 0xf8c624], [7.2, -18.4, 0x35d65c]]) {
+    const barrel = new THREE.Group();
+    const bMat = mat(col, { roughness: 0.35, metalness: 0.28 });
+    const bodyMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 1.05, 14), bMat);
+    bodyMesh.castShadow = true; bodyMesh.receiveShadow = true; barrel.add(bodyMesh);
+    for (const ry of [-0.36, 0, 0.36]) {
+      const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.47, 0.035, 6, 16), steelDark);
+      hoop.rotation.x = Math.PI / 2; hoop.position.y = ry; barrel.add(hoop);
+    }
+    parent.add(barrel);
+    const body = new CANNON.Body({ mass: 14, material: groundMaterial, collisionFilterGroup: 4, collisionFilterMask: -1, linearDamping: 0.14, angularDamping: 0.25 });
+    body.addShape(new CANNON.Cylinder(0.46, 0.46, 1.05, 10));
+    body.position.set(bx, 0.56, bz); world.addBody(body);
+    dynamicProps.push({ body, mesh: barrel, start: body.position.clone(), baseStart: body.position.clone() });
+  }
+
+  // 7) 工业平台底座与远景工地脚手架塔架（增强测试场空间纵深，绝不遮挡视野）
+  staticBatch.add(new THREE.BoxGeometry(46.5, 1.4, 46.5), steelDark, [0, -2.2, 0]);
+  for (const [sx, sz] of [[-35, -34], [35, -34], [-38, 12], [38, 12]]) {
+    for (const ox of [-2.4, 2.4]) for (const oz of [-2.4, 2.4]) {
+      distantBatch.add(new THREE.CylinderGeometry(0.22, 0.22, 22, 6), scaffoldMetal, [sx + ox, 4, sz + oz]);
+    }
+    for (const sy of [-2, 4, 10, 14]) {
+      distantBatch.add(new THREE.BoxGeometry(5.4, 0.28, 5.4), sy === 14 ? safetyYellow : wallCharcoal, [sx, sy, sz]);
+    }
+  }
 }
 
 function buildNeon(c) {
@@ -491,8 +784,10 @@ export function createMapManager(scene, world, groundMaterial) {
 
   function spawnSafe(x, z, radius = 2) {
     if (!active || Math.abs(x) + radius > active.arena.halfSize - 0.3 || Math.abs(z) + radius > active.arena.halfSize - 0.3) return false;
+    const pit = active.arena.pitHalf || 0;
+    if (pit > 0 && Math.abs(x) < pit + radius + 0.6 && Math.abs(z) < pit + radius + 0.6) return false;
     for (const body of active.bodies) {
-      if (body === active.floor || body.collisionFilterMask === 0) continue;
+      if (body === active.floor || active.arena.floorBodies?.has(body) || body.collisionFilterMask === 0) continue;
       if (body.aabbNeedsUpdate) body.updateAABB();
       const a = body.aabb;
       if (a.upperBound.y < 0.1 || a.lowerBound.y > 2) continue;
@@ -508,6 +803,7 @@ export function createMapManager(scene, world, groundMaterial) {
     get id() { return active.descriptor.id; },
     get descriptor() { return active.descriptor; },
     get halfSize() { return active.arena.halfSize; },
+    get pitHalf() { return active.arena.pitHalf || 0; },
     get dynamicProps() { return active.arena.dynamicProps; },
     get spawnPoints() {
       return Array.from({ length: 6 }, (_, index) => { const yaw = index * Math.PI / 3, r = active.arena.halfSize * 0.62; return { x: Math.sin(yaw) * r, z: Math.cos(yaw) * r, yaw }; });
@@ -516,6 +812,7 @@ export function createMapManager(scene, world, groundMaterial) {
     setVisible(value) { visible = !!value; if (active && enabled) active.group.visible = visible; },
     setRound(nextRound = 1, total = 6, shrink = 0) { round = nextRound; totalRounds = total; return active.arena.setRound(round, totalRounds, shrink); },
     update(dt, time, player) { active?.arena.update(dt, time, player); },
+    tick(dt, cars, env) { active?.arena.tick?.(dt, cars, env); },
     diagnostics() {
       const geometries = new Set(), materials = new Set(), textures = new Set();
       const worldSet = new Set(world.bodies); let inactiveBodiesInWorld = 0, visibleMapGroups = 0;
@@ -533,6 +830,6 @@ export function createMapManager(scene, world, groundMaterial) {
       return { id: active.descriptor.id, halfSize: active.arena.halfSize, cachedMaps: cache.size, bodyCounts, activeMapBodies: active.bodies.length, activeBodiesInWorld: active.bodies.filter(body => worldSet.has(body)).length, inactiveBodiesInWorld, worldBodies: world.bodies.length, visibleMapGroups, visible, cachedResources: { geometries: geometries.size, materials: materials.size, textures: textures.size } };
     },
   };
-  setMap('meadow'); return manager;
+  setMap('testpit'); return manager;
 }
 

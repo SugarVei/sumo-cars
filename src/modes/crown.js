@@ -40,7 +40,13 @@ export function createCrown(ctx,settings){
     if(h.isPlayer)ctx.announce('王冠被打掉了！',attacker?`${attacker.name} 把它打飞了`:'快抢回来',1.2,'small');
     ctx.sound.collision(1,0);ctx.effects.knockout?.(crown.pos,1);
   }
-  function resetCrown(){if(crown.holder)crown.holder.speedMul=1;crown.holder=null;crown.flying=false;crown.pos.set(0,1.6,0);crown.vel.set(0,0,0);crown.cooldown=.4;}
+  function resetCrown(){
+    if(crown.holder)crown.holder.speedMul=1;
+    crown.holder=null;crown.flying=false;
+    const pit=ctx.venue?.pitHalf||0;
+    crown.pos.set(0,1.6,pit>0?pit+3.2:0);
+    crown.vel.set(0,0,0);crown.cooldown=.4;
+  }
   function spawn(){
     const venue=ctx.venue;venue.setRound(3,6);
     for(const car of cars){const a=car.id*Math.PI/3+Math.PI/6,r=venue.halfSize*.66;ctx.placeCar(car,Math.sin(a)*r,Math.cos(a)*r,Math.atan2(Math.sin(a),Math.cos(a)));car.cooldown=0;car.mode.crown=car.mode.crown||0;}
@@ -66,7 +72,19 @@ export function createCrown(ctx,settings){
     },
     control(car,dt){
       const venue=ctx.venue,p=car.body.position;
-      const safety=c=>{const q=c.body.position,v=c.body.velocity,edge=Math.max(Math.abs(q.x+v.x*.5),Math.abs(q.z+v.z*.5));return {danger:clamp((edge-venue.halfSize+5.5)/3.8,0,1),x:q.x*.5,z:q.z*.5};};
+      const safety=c=>{
+        const q=c.body.position,v=c.body.velocity,fx=q.x+v.x*.5,fz=q.z+v.z*.5,edge=Math.max(Math.abs(fx),Math.abs(fz));
+        const outerDanger=clamp((edge-venue.halfSize+5.5)/3.8,0,1);
+        const pit=venue.pitHalf||0;
+        if(pit>0){
+          const pitDanger=clamp((pit+3.2-edge)/3.0,0,1);
+          if(pitDanger>outerDanger){
+            const len=Math.hypot(q.x,q.z)||1,safeR=Math.min(venue.halfSize-5.5,pit+6.2);
+            return {danger:pitDanger,x:q.x/len*safeR-q.z/len*3,z:q.z/len*safeR+q.x/len*3};
+          }
+        }
+        return {danger:outerDanger,x:q.x*.5,z:q.z*.5};
+      };
       if(crown.holder===car){
         // Flee: steer away from chasers, bending back toward the middle near edges.
         let fx=0,fz=0;
@@ -96,7 +114,9 @@ export function createCrown(ctx,settings){
       if(crown.holder&&!crown.holder.active){const h=crown.holder;h.mode.lastCrownLoss=ctx.simTime;resetCrown();if(!ctx.demo)ctx.announce('王冠重置','回到场地中央',1.1,'small');}
       if(crown.flying){
         crown.vel.y-=22*dt;crown.pos.addScaledVector(crown.vel,dt);
-        if(crown.pos.y<1.6&&Math.max(Math.abs(crown.pos.x),Math.abs(crown.pos.z))<venue.halfSize-1){crown.pos.y=1.6;crown.vel.set(0,0,0);crown.flying=false;}
+        const pit=venue.pitHalf||0;
+        const overPit=pit>0&&Math.abs(crown.pos.x)<pit&&Math.abs(crown.pos.z)<pit;
+        if(!overPit&&crown.pos.y<1.6&&Math.max(Math.abs(crown.pos.x),Math.abs(crown.pos.z))<venue.halfSize-1){crown.pos.y=1.6;crown.vel.set(0,0,0);crown.flying=false;}
         if(crown.pos.y<-6){resetCrown();}
       }
       if(!crown.holder&&crown.cooldown<=0){

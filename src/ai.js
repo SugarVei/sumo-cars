@@ -25,6 +25,7 @@ export function unstick(car,dt,simTime,angle){
 /** Punch when a target sits squarely in front. */
 export function maybePunch(ctx,car,target,dt,{rate=1,cone=.86}={}){
   if(!target||!target.active||car.cooldown>0)return false;
+  if(car.team&&target.team&&car.team===target.team)return false;
   const p=car.body.position,t=target.body.position,dx=t.x-p.x,dz=t.z-p.z,len=Math.hypot(dx,dz);
   if(len>6.1||len<1)return false;
   const facing=(dx*car.forward.x+dz*car.forward.z)/len;
@@ -46,6 +47,7 @@ export function brawlAI(ctx,car,dt,{choose=()=>0,safety,punchRate=1,goal=null}={
     for(const other of ctx.cars)if(other!==car&&other.target&&!other.isPlayer)crowd.set(other.target.id,(crowd.get(other.target.id)||0)+1);
     let best=-Infinity;car.target=null;
     for(const candidate of ctx.cars){if(candidate===car||!candidate.active||candidate.ghostUntil>ctx.simTime)continue;
+      if(car.team&&candidate.team&&car.team===candidate.team)continue;
       const t=candidate.body.position,d=p.distanceTo(t);
       const value=24/(d+4)+(candidate.id===car.revenge?.85:0)+(candidate.isPlayer&&difficulty!=='easy'?.45:0)-(crowd.get(candidate.id)||0)*.55+Math.random()*.45+choose(candidate,d);
       if(value>best){best=value;car.target=candidate;}

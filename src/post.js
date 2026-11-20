@@ -58,13 +58,13 @@ const FinalShader={
 };
 
 const LOOKS={
-  // Clarity first: tight, faint bloom; no raised blacks; almost no fringe or grain.
-  day:{bloom:[.14,.2,.97],vignette:.14,saturation:1.04,contrast:1.05,lift:[0,0,0],gain:[1,1,1],grain:.004,aberration:.0004},
-  sunset:{bloom:[.2,.22,.95],vignette:.18,saturation:1.05,contrast:1.06,lift:[0,0,0],gain:[1.02,1,.98],grain:.005,aberration:.0005},
-  night:{bloom:[.36,.24,.9],vignette:.22,saturation:1.06,contrast:1.08,lift:[0,0,0],gain:[1,1,1.02],grain:.006,aberration:.0006},
-  space:{bloom:[.34,.24,.9],vignette:.22,saturation:1.05,contrast:1.07,lift:[0,0,0],gain:[.99,1,1.02],grain:.006,aberration:.0006},
-  studio:{bloom:[.22,.22,.94],vignette:.24,saturation:1.04,contrast:1.06,lift:[0,0,0],gain:[1,1,1],grain:.004,aberration:.0004},
-  ice:{bloom:[.14,.2,.98],vignette:.16,saturation:1.03,contrast:1.06,lift:[0,0,0],gain:[.99,1,1.02],grain:.004,aberration:.0004},
+  // Clarity first: tight, crisp daylight look with vibrant true colours and sharp shadows.
+  day:{bloom:[.11,.18,1.02],vignette:.08,saturation:1.08,contrast:1.06,lift:[0,0,0],gain:[1.01,1.01,1.01],grain:.003,aberration:.0003},
+  sunset:{bloom:[.18,.22,.96],vignette:.14,saturation:1.07,contrast:1.06,lift:[0,0,0],gain:[1.02,1,.98],grain:.004,aberration:.0004},
+  night:{bloom:[.36,.24,.9],vignette:.2,saturation:1.06,contrast:1.08,lift:[0,0,0],gain:[1,1,1.02],grain:.005,aberration:.0005},
+  space:{bloom:[.34,.24,.9],vignette:.2,saturation:1.05,contrast:1.07,lift:[0,0,0],gain:[.99,1,1.02],grain:.005,aberration:.0005},
+  studio:{bloom:[.16,.2,.98],vignette:.16,saturation:1.06,contrast:1.06,lift:[0,0,0],gain:[1,1,1],grain:.003,aberration:.0003},
+  ice:{bloom:[.14,.2,.98],vignette:.14,saturation:1.04,contrast:1.06,lift:[0,0,0],gain:[.99,1,1.02],grain:.003,aberration:.0003},
 };
 
 export function createPost(renderer,scene,camera,lighting){

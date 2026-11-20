@@ -175,13 +175,13 @@ export function createEffects(scene) {
   const wheelPoint = new THREE.Vector3();
   // One draw call for all tumbling pieces, including simultaneous local-player hits.
   const chipMesh=new THREE.InstancedMesh(new THREE.TetrahedronGeometry(1),
-    new THREE.MeshBasicMaterial({toneMapped:false}),128);
+    new THREE.MeshBasicMaterial({toneMapped:false}),256);
   chipMesh.name='Impact sparks';chipMesh.count=0;chipMesh.frustumCulled=false;
   chipMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);scene.add(chipMesh);
-  const chips=Array.from({length:128},()=>({life:0})),chipPose=new THREE.Object3D();
-  const chipColors=[new THREE.Color(3,2.1,.6),new THREE.Color(2.8,2.8,2.8)];
+  const chips=Array.from({length:256},()=>({life:0})),chipPose=new THREE.Object3D();
+  const chipColors=[new THREE.Color(3.6,2.35,.55),new THREE.Color(3.5,1.25,.2),new THREE.Color(3.2,3.1,2.6)];
   let chipCursor=0;
-  const trackColor = [0.10, 0.075, 0.034];
+  const trackColor = [0.055, 0.052, 0.05];
   const ringColor = [0.86, 0.96, 1.0];
   const landingColor = [0.52, 0.45, 0.29];
   const sparkColor = [1.0, 0.7, 0.22];
@@ -241,13 +241,13 @@ export function createEffects(scene) {
   }
 
   function metalSparks(position,power){
-    const count=clamp(Math.round(18*power),12,25);
+    const count=clamp(Math.round(28*power),20,44);
     for(let i=0;i<count;i++){
-      const p=chips[chipCursor++ % chips.length],angle=random()*TAU,speed=(2+random()*7)*power;
-      p.x=position.x;p.y=position.y;p.z=position.z;p.floor=position.y-.56;
-      p.vx=Math.cos(angle)*speed;p.vz=Math.sin(angle)*speed;p.vy=1.8+random()*5;
-      p.life=.25+random()*.32;p.spin=random()*15-7;p.size=.045+random()*.045;
-      p.angle=angle;p.bounced=false;p.color=chipColors[i%2];
+      const p=chips[chipCursor++ % chips.length],angle=random()*TAU,speed=(3.4+random()*9.2)*Math.min(1.85,power);
+      p.x=position.x+(random()-.5)*.28;p.y=position.y+.08;p.z=position.z+(random()-.5)*.28;p.floor=Math.max(0.03,position.y-.56);
+      p.vx=Math.cos(angle)*speed;p.vz=Math.sin(angle)*speed;p.vy=2.4+random()*6.4;
+      p.life=.28+random()*.38;p.spin=random()*18-9;p.size=.048+random()*.048;
+      p.angle=angle;p.bounced=false;p.color=chipColors[i%chipColors.length];
     }
   }
   function updateSparks(dt){
@@ -258,10 +258,10 @@ export function createEffects(scene) {
       p.vy-=24*dt;p.y+=p.vy*dt;p.x+=p.vx*dt;p.z+=p.vz*dt;p.angle+=p.spin*dt;
       if(p.y<p.floor&&p.vy<0){
         if(p.bounced){p.life=0;continue;}
-        p.bounced=true;p.y=p.floor;p.vy*=-.4;
+        p.bounced=true;p.y=p.floor;p.vy*=-.48;p.vx*=.78;p.vz*=.78;
       }
       const size=p.size*Math.min(1,p.life*10);
-      chipPose.position.set(p.x,p.y,p.z);chipPose.scale.set(size*2.5,size,size);
+      chipPose.position.set(p.x,p.y,p.z);chipPose.scale.set(size*3.8,size*.9,size*.9);
       chipPose.rotation.set(p.angle,p.angle*.7,p.angle*.3);chipPose.updateMatrix();
       chipMesh.setMatrixAt(count,chipPose.matrix);chipMesh.setColorAt(count,p.color);count++;
     }
@@ -318,11 +318,11 @@ export function createEffects(scene) {
       const last = state.marks[side];
       const dx = x - last.x, dz = z - last.z, distance = Math.hypot(dx, dz);
       const connected = clock - last.time < 0.22 && distance > 0.04 && distance < 2.8;
-      const life = 12 + random() * 6;
+      const life = 22 + random() * 8;
       writeGround(tracks, clock, connected ? (x + last.x) * 0.5 : x,
         0.027 + (tracks.cursor % 3) * 0.0002, connected ? (z + last.z) * 0.5 : z,
-        0.24, connected ? distance + 0.24 : 0.65, connected ? Math.atan2(dx, dz) : yaw,
-        life, (car.drifting ? .31 : .18) + random() * 0.07, trackColor);
+        0.29, connected ? distance + 0.28 : 0.72, connected ? Math.atan2(dx, dz) : yaw,
+        life, (car.drifting ? .48 : .30) + random() * 0.09, trackColor);
       tracksUntil = Math.max(tracksUntil, clock + life);
       last.time = clock; last.x = x; last.z = z;
       if (clock >= state.dustAt) {
@@ -338,18 +338,18 @@ export function createEffects(scene) {
 
   function collision(position, strength = 1) {
     const power = clamp(strength, 0.25, 2.5);
-    if(strength>=(30/3.6)/15)metalSparks(position,power);
-    const count = Math.round(5 + power * 5);
+    if(strength>=0.42)metalSparks(position,Math.max(0.85,power*1.12));
+    const count = Math.round(8 + power * 7);
     for (let i = 0; i < count; i++) {
-      const angle = random() * TAU, speed = (2 + random() * 5) * power;
+      const angle = random() * TAU, speed = (2.6 + random() * 6.4) * power;
       const spark = particle(light, lightParticles, position.x, position.y + 0.15, position.z,
-        0.18 + random() * 0.24, 0.25 + random() * 0.3, 0.85, 5,
-        Math.sin(angle) * speed, 1.3 + random() * 4, Math.cos(angle) * speed,
-        sparkColor, 0.1, 17, 0.7);
-      spark.stretch = 0.17; spark.angle = angle; spark.spin = 0;
+        0.18 + random() * 0.26, 0.28 + random() * 0.34, 0.92, 5,
+        Math.sin(angle) * speed, 1.6 + random() * 4.6, Math.cos(angle) * speed,
+        i % 3 === 0 ? whiteColor : sparkColor, 0.12, 17, 0.65);
+      spark.stretch = 0.16; spark.angle = angle; spark.spin = 0;
     }
     particle(light, lightParticles, position.x, position.y + 0.15, position.z,
-      0.12, 1.3 + power * 0.7, 0.65, 2, 0, 0, 0, impactColor, 1.4, 0, 0);
+      0.13, 1.5 + power * 0.85, 0.72, 2, 0, 0, 0, impactColor, 1.6, 0, 0);
   }
 
   function cloudSplash(x, y, z) {

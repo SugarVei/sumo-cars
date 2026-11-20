@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-19T12:34:13.917Z",
+  "date": "2026-11-20T03:40:42.832Z",
   "passed": 38,
   "total": 38,
   "checks": [
@@ -45,7 +45,7 @@
         "quality": "medium",
         "music": true,
         "laps": 2,
-        "format": "classic",
+        "format": "team",
         "rounds": 3,
         "crownTarget": 60,
         "musicVolume": 1,
@@ -72,7 +72,7 @@
       "pass": true,
       "detail": {
         "before": 0,
-        "after": 0.115
+        "after": 0.179
       }
     },
     {
@@ -141,32 +141,32 @@
       "name": "3-lap race on neon reaches the podium",
       "pass": true,
       "detail": {
-        "t": 137,
+        "t": 143.5,
         "state": "results",
         "falls": [
+          7,
+          2,
           3,
-          4,
-          1,
-          1,
+          5,
           6,
-          4
+          1
         ],
         "nitro": [
           4,
           4,
+          5,
           4,
-          4,
-          4,
+          3,
           4
         ],
-        "finished": 6,
+        "finished": 3,
         "best": [
-          39.8,
           36.6,
-          34,
-          39.2,
-          41.7,
-          33.1
+          47.3,
+          35.8,
+          46.6,
+          33.3,
+          39.2
         ]
       }
     },
@@ -176,9 +176,9 @@
       "detail": [
         4,
         4,
+        5,
         4,
-        4,
-        4,
+        3,
         4
       ]
     },
@@ -186,32 +186,32 @@
       "name": "3-lap race on canyon reaches the podium",
       "pass": true,
       "detail": {
-        "t": 154.5,
+        "t": 137.5,
         "state": "results",
         "falls": [
-          9,
-          7,
-          3,
-          6,
           5,
-          3
+          7,
+          2,
+          2,
+          6,
+          2
         ],
         "nitro": [
-          5,
-          3,
-          5,
           4,
           4,
-          4
+          4,
+          2,
+          4,
+          3
         ],
-        "finished": 4,
+        "finished": 2,
         "best": [
-          40.8,
-          46.4,
-          35.4,
-          50.8,
-          39.8,
-          41.1
+          36.8,
+          40.6,
+          38.4,
+          44.7,
+          44.8,
+          39.1
         ]
       }
     },
@@ -219,12 +219,12 @@
       "name": "Drivers drift-charge and fire nitro on canyon",
       "pass": true,
       "detail": [
-        5,
-        3,
-        5,
         4,
         4,
-        4
+        4,
+        2,
+        4,
+        3
       ]
     },
     {
@@ -233,21 +233,21 @@
       "detail": {
         "t": 361.5,
         "state": "results",
-        "fires": 61,
+        "fires": 67,
         "scores": [
           12,
-          21,
-          6,
-          13,
           15,
-          13
+          18,
+          23,
+          16,
+          18
         ]
       }
     },
     {
       "name": "Arena drivers also use nitro rams",
       "pass": true,
-      "detail": 61
+      "detail": 67
     },
     {
       "name": "Results copy is Chinese",
@@ -261,12 +261,12 @@
         "t": 138,
         "state": "results",
         "time": [
-          11.3,
-          15.8,
-          5,
-          11.3,
-          23.4,
-          13.9
+          17.3,
+          20.3,
+          14.3,
+          7.9,
+          18.8,
+          6.3
         ]
       }
     },
@@ -274,14 +274,14 @@
       "name": "Meltdown finishes three rounds",
       "pass": true,
       "detail": {
-        "t": 72,
+        "t": 62,
         "state": "results",
         "points": [
-          10,
-          2,
-          13,
+          7,
           4,
-          6,
+          9,
+          7,
+          7,
           4
         ]
       }
@@ -318,97 +318,97 @@
   ],
   "metrics": {
     "race-neon": {
-      "t": 137,
+      "t": 143.5,
       "state": "results",
       "falls": [
+        7,
+        2,
         3,
-        4,
-        1,
-        1,
+        5,
         6,
-        4
+        1
       ],
       "nitro": [
         4,
         4,
+        5,
         4,
-        4,
-        4,
+        3,
         4
       ],
-      "finished": 6,
+      "finished": 3,
       "best": [
-        39.8,
         36.6,
-        34,
-        39.2,
-        41.7,
-        33.1
+        47.3,
+        35.8,
+        46.6,
+        33.3,
+        39.2
       ]
     },
     "race-canyon": {
-      "t": 154.5,
+      "t": 137.5,
       "state": "results",
       "falls": [
-        9,
-        7,
-        3,
-        6,
         5,
-        3
+        7,
+        2,
+        2,
+        6,
+        2
       ],
       "nitro": [
-        5,
-        3,
-        5,
         4,
         4,
-        4
+        4,
+        2,
+        4,
+        3
       ],
-      "finished": 4,
+      "finished": 2,
       "best": [
-        40.8,
-        46.4,
-        35.4,
-        50.8,
-        39.8,
-        41.1
+        36.8,
+        40.6,
+        38.4,
+        44.7,
+        44.8,
+        39.1
       ]
     },
     "sumo": {
       "t": 361.5,
       "state": "results",
-      "fires": 61,
+      "fires": 67,
       "scores": [
         12,
-        21,
-        6,
-        13,
         15,
-        13
+        18,
+        23,
+        16,
+        18
       ]
     },
     "crown": {
       "t": 138,
       "state": "results",
       "time": [
-        11.3,
-        15.8,
-        5,
-        11.3,
-        23.4,
-        13.9
+        17.3,
+        20.3,
+        14.3,
+        7.9,
+        18.8,
+        6.3
       ]
     },
     "meltdown": {
-      "t": 72,
+      "t": 62,
       "state": "results",
       "points": [
-        10,
-        2,
-        13,
+        7,
         4,
-        6,
+        9,
+        7,
+        7,
         4
       ]
     }

@@ -71,6 +71,7 @@ export function createRace(ctx,settings){
         if(other.effect==='shield'&&other.effectEnd>ctx.simTime){other.effect=null;continue;}
         const f=(1-dist/10)*1500+500;impulse.set(d.x/(dist||1)*f,700,d.z/(dist||1)*f);other.body.applyImpulse(impulse);
         other.lastAttacker=car.id;other.lastHit=ctx.simTime;other.hitFlash=1;
+        ctx.popup?.(other.body.position,Math.round(f*.26),'震荡','crit');
         if(car.isPlayer||other.isPlayer){ctx.hitStop(.08);ctx.shake(.4);}
       }
       if(!ctx.demo)ctx.sound.hit(1.8,0);
@@ -96,6 +97,7 @@ export function createRace(ctx,settings){
         if(target.effect==='shield'&&target.effectEnd>ctx.simTime){target.effect=null;}
         else{const side=(Math.random()<.5?-1:1);impulse.set(target.forward.z*side*700-target.forward.x*500,1500,-target.forward.x*side*700-target.forward.z*500);
           target.body.applyImpulse(impulse);target.body.angularVelocity.y+=side*6;target.hitFlash=1;target.lastAttacker=r.owner.id;target.lastHit=ctx.simTime;
+          ctx.popup?.(target.body.position,540,'火箭重击','crit');
           if(target.isPlayer||r.owner.isPlayer){ctx.hitStop(.09);ctx.shake(.45);ctx.fovKick(5);}
           if(target.isPlayer)ctx.announce('被火箭拳击中！',`${r.owner.name} 打中了你`,1.1,'small');
           if(r.owner.isPlayer)ctx.announce('命中！',`${target.name} 原地打转`,1.1,'small');}

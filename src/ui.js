@@ -37,6 +37,7 @@ export function createUI(cb={}){
   root.innerHTML=`
   <div id="edge-danger"></div>
   <div class="name-labels"></div>
+  <div id="hit-popups"></div>
   <div id="offscreen"></div>
 
   <div class="hud">
@@ -45,7 +46,18 @@ export function createUI(cb={}){
         <div id="race-pos" class="race-only"><small>名次</small><b>4</b><span>/ 6</span></div>
         <section id="board" class="panel"><h3></h3><ol></ol></section>
       </div>
-      <section id="clock" class="panel"><div class="big">00:00</div><div class="lines"></div><div class="tag"></div></section>
+      <section id="clock" class="panel">
+        <div class="clock-core">
+          <div class="team-pip blue" hidden><b>0</b><small>蓝队</small></div>
+          <div class="clock-center"><div class="big">00:00</div><div class="lines"></div></div>
+          <div class="team-pip red" hidden><b>0</b><small>红队</small></div>
+        </div>
+        <div class="tag"></div>
+      </section>
+    </div>
+    <div id="team-hud" hidden>
+      <ul class="team-col blue"></ul>
+      <ul class="team-col red"></ul>
     </div>
     <canvas id="minimap" class="race-only" width="220" height="220"></canvas>
     <div class="feed"></div>
@@ -102,8 +114,8 @@ export function createUI(cb={}){
         <span class="logo-sticker" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h12l3-6-3-5H9L5 11z"/><path d="M9 17v5m5-5v5m5-5v5"/></svg></span>
       </div>
       <h1 class="logo">PUNCH DRIVE</h1>
-      <p class="slogan">竞速 · 乱斗 · 生存</p>
-      <p class="blurb">六名车手，四种赢法。每辆美式越野车的保险杠上，都装着一只重拳。</p>
+      <p class="slogan">相扑 · 竞速 · 乱斗 · 生存</p>
+      <p class="blurb">六名车手，五大模式，3v3 工业测试场与悬空霓虹赛道。每台烤漆赛车的前杠上，都装着一只硬核弹簧重拳。</p>
     </header>
     <section class="mode-grid">${modeOrder.map(id=>`<button class="mode-card${id==='tour'?' featured':''}" data-mode="${id}" style="--accent:${modes[id].accent}">
       <span class="icon">${ICONS[id]}</span><span class="names"><strong>${esc(modes[id].name)}</strong><em>${esc(modes[id].en)}</em></span><p>${esc(modes[id].tag)}</p><span class="chips"><b>${esc(modes[id].length)}</b><b>6 名车手</b>${id==='tour'?'<b class="hot">推荐</b>':''}</span></button>`).join('')}</section>
@@ -188,19 +200,21 @@ export function createUI(cb={}){
   const n={
     board:$('#board'),boardTitle:$('#board h3'),boardList:$('#board ol'),racePos:$('#race-pos'),
     clockBig:$('#clock .big'),clockLines:$('#clock .lines'),clockTag:$('#clock .tag'),clock:$('#clock'),
+    teamBluePip:$('#clock .team-pip.blue'),teamRedPip:$('#clock .team-pip.red'),
+    teamHud:$('#team-hud'),teamBlueList:$('#team-hud .team-col.blue'),teamRedList:$('#team-hud .team-col.red'),
     minimap:$('#minimap'),feed:$('.feed'),item:$('#item-slot'),punch:$('#punch-btn'),punchState:$('#punch-btn em'),punchFill:$('#punch-btn .meter i'),
     speed:$('#speedo .speed b'),speedFill:$('#speedo .speed-bar i'),speedo:$('#speedo'),effect:$('#speedo .effect'),
     nitro:$('#speedo .nitro'),nitroTanks:[...root.querySelectorAll('#speedo .tanks i')],nitroFill:$('#speedo .nitro-bar i'),nitroHint:$('#speedo .nitro-hint'),
     countdown:$('#countdown'),announce:$('#announce'),respawn:$('#respawn'),wrong:$('#wrong-way'),spectate:$('#spectate'),combo:$('#combo'),
-    danger:$('#edge-danger'),labels:$('.name-labels'),offscreen:$('#offscreen'),sound:$('#sound-btn'),hint:$('#controls-hint'),
+    danger:$('#edge-danger'),labels:$('.name-labels'),popups:$('#hit-popups'),offscreen:$('#offscreen'),sound:$('#sound-btn'),hint:$('#controls-hint'),
   };
-  const labelNodes=new Map(),indicatorNodes=new Map();
-  let setup={mode:'race',step:'venue',venue:'neon',classId:'rumbler',paint:'arctic',difficulty:'normal',laps:3,lapGhost:1,format:'classic',crownTarget:60,rounds:3};
+  const labelNodes=new Map(),indicatorNodes=new Map(),popupNodes=new Map();
+  let setup={mode:'sumo',step:'venue',venue:'testpit',classId:'dart',paint:'arctic',difficulty:'normal',laps:3,lapGhost:1,format:'team',crownTarget:60,rounds:3};
   let settings={quality:'medium',music:true,players:1,musicVolume:1,sfxVolume:1};
   try{const saved=JSON.parse(localStorage.getItem('punch-drive-setup')||'{}');setup={...setup,...saved.setup};settings={...settings,...saved.settings};}catch{}
   if(!Object.hasOwn(gloves,setup.glove))setup.glove='spring';
   const save=()=>{try{localStorage.setItem('punch-drive-setup',JSON.stringify({setup:{classId:setup.classId,paint:setup.paint,glove:setup.glove,difficulty:setup.difficulty,lapGhost:setup.lapGhost},settings}));}catch{}};
-  let announceTimer=0,countTimer=0,lastBoard='',minimapPath=null,minimapBounds=null,minimapAccent='#38d9f5',hintTimer=0,readyTimer=0;
+  let announceTimer=0,countTimer=0,lastBoard='',lastTeams='',minimapPath=null,minimapBounds=null,minimapAccent='#38d9f5',hintTimer=0,readyTimer=0;
   const ctx2d=n.minimap.getContext('2d');
 
   // ------------------------------------------------ menu
@@ -239,7 +253,7 @@ export function createUI(cb={}){
     const rows=[];
     if(mode==='race')rows.push(['laps','圈数',[[2,'2 圈'],[3,'3 圈'],[5,'5 圈']]]);
     if(mode==='race'&&settings.players===1&&readBestLap(setup.venue))rows.push(['lapGhost','本机纪录幽灵车',[[1,'开启'],[0,'关闭']]]);
-    if(mode==='sumo')rows.push(['format','赛制',[['classic','经典 6×60 秒'],['quick','快速 3×45 秒']]]);
+    if(mode==='sumo')rows.push(['format','赛制',[['team','3v3 团队赛'],['classic','经典 6×60 秒'],['quick','快速 3×45 秒']]]);
     if(mode==='crown')rows.push(['crownTarget','王冠目标',[[45,'45 秒'],[60,'60 秒'],[90,'90 秒']]]);
     if(mode==='meltdown')rows.push(['rounds','回合数',[[2,'2 回合'],[3,'3 回合'],[5,'5 回合']]]);
     rows.push(['difficulty','对手',[['easy','简单'],['normal','普通'],['hard','困难']]]);
@@ -299,13 +313,13 @@ export function createUI(cb={}){
     setStep(modes[mode].venueType?'venue':'car');
   }
   $('.crumb-mode').addEventListener('click',()=>{
-    cb.garage?.(false);showScreen('menu');cb.preview?.({mode:'race',venue:'neon'});
+    cb.garage?.(false);showScreen('menu');cb.preview?.({mode:'sumo',venue:'testpit'});
   });
   $$('.crumbs [data-step]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.step!==setup.step)setStep(b.dataset.step);}));
   $('.back-btn').addEventListener('click',back);
   $('.next-btn').addEventListener('click',confirm);
   function back(){
-    if(root.dataset.screen==='setup'){if(setup.step==='car'&&modes[setup.mode].venueType)setStep('venue');else{cb.garage?.(false);showScreen('menu');cb.preview?.({mode:'race',venue:'neon'});}}
+    if(root.dataset.screen==='setup'){if(setup.step==='car'&&modes[setup.mode].venueType)setStep('venue');else{cb.garage?.(false);showScreen('menu');cb.preview?.({mode:'sumo',venue:'testpit'});}}
   }
   function confirm(){
     if(root.dataset.screen==='menu'){openSetup('race');return;}
@@ -377,9 +391,10 @@ export function createUI(cb={}){
     if(name!=='playing'){clearTimeout(announceTimer);n.announce.classList.remove('visible');n.countdown.className='';
       cancelTouch.forEach(cancel=>cancel());}
     if(name==='playing'&&!data.resume){
-      root.dataset.localDuo=String(!!data.duo);root.dataset.mode=data.mode||'race';root.style.setProperty('--mode-accent',data.info?.accent||'#38d9f5');
-      n.feed.replaceChildren();lastBoard='';n.hint.classList.add('show');clearTimeout(hintTimer);
-      n.respawn.hidden=true;n.wrong.hidden=true;n.spectate.hidden=true;
+      root.dataset.localDuo=String(!!data.duo);root.dataset.mode=data.mode||'race';root.dataset.team='false';root.style.setProperty('--mode-accent',data.info?.accent||'#38d9f5');
+      n.feed.replaceChildren();lastBoard='';lastTeams='';n.hint.classList.add('show');clearTimeout(hintTimer);
+      n.respawn.hidden=true;n.wrong.hidden=true;n.spectate.hidden=true;n.teamHud.hidden=true;
+      n.teamBluePip.hidden=true;n.teamRedPip.hidden=true;
     }
     if(name==='paused'){$('.pause-sub').textContent=data.tour?'派对巡回赛进行中':'比赛会在这里等你';syncSettingsUI();}
     if(name==='menu'){syncSettingsUI();}
@@ -390,8 +405,8 @@ export function createUI(cb={}){
   function renderResults(data){
     const standings=data.standings||[],rank=standings.findIndex(s=>s.player)+1;
     $('.eyebrow').textContent=`${data.info?.name||''}${data.subtitle?` · ${data.subtitle}`:''}`;
-    $('.result-title').textContent=rank===1?(data.title||'冠军'):place(rank);
-    $('.result-title').dataset.win=rank===1?'1':'0';
+    $('.result-title').textContent=data.title||(rank===1?'冠军':place(rank));
+    $('.result-title').dataset.win=(data.teamWin!=null?data.teamWin===1:rank===1)?'1':'0';
     const medal=standings[rank-1]?.accolade;
     $('.result-sub').textContent=medal?`${medal.name} · ${medal.reason}`:`第 ${rank} 名，共 ${standings.length} 名车手`;
     $('.final').innerHTML=standings.map((s,i)=>{
@@ -422,6 +437,20 @@ export function createUI(cb={}){
     }
     if(s.clock){n.clockBig.textContent=s.clock.big;n.clockLines.innerHTML=s.clock.lines.map(l=>`<span>${l}</span>`).join('');n.clockTag.textContent=s.clock.tag||'';
       n.clock.classList.toggle('warn',!!s.clock.warn);n.clock.classList.toggle('hot',!!s.clock.hot);}
+    const hasTeam=!!(s.teamScore&&s.teams);
+    root.dataset.team=String(hasTeam);
+    n.teamBluePip.hidden=!hasTeam;n.teamRedPip.hidden=!hasTeam;n.teamHud.hidden=!hasTeam;
+    if(hasTeam){
+      n.teamBluePip.querySelector('b').textContent=s.teamScore.blue;
+      n.teamRedPip.querySelector('b').textContent=s.teamScore.red;
+      const duo=root.dataset.localDuo==='true';
+      const renderCol=(rows)=>rows.map(row=>{
+        const local=duo&&row.id===1,driver=duo&&row.id===0?'1P':local?'2P':row.player?'你':row.name;
+        return `<li class="${row.player?'me':''}${local?' local-driver':''}${row.out?' out':''}"><i style="background:${esc(row.color)}"></i><b>${esc(driver)}</b><span>${esc(row.value)}</span></li>`;
+      }).join('');
+      const bHtml=renderCol(s.teams.blue),rHtml=renderCol(s.teams.red),key=bHtml+'|'+rHtml;
+      if(key!==lastTeams){n.teamBlueList.innerHTML=bHtml;n.teamRedList.innerHTML=rHtml;lastTeams=key;}
+    }
     if(s.board){n.boardTitle.textContent=s.board.title;
       const leaderboard=s.board.rows,duo=root.dataset.localDuo==='true';
       const html=leaderboard.map((row,rank)=>{
@@ -525,8 +554,33 @@ export function createUI(cb={}){
     const active=new Set();
     for(const l of labels){active.add(l.id);let el=labelNodes.get(l.id);
       if(!el){el=document.createElement('div');el.className='car-label';n.labels.append(el);labelNodes.set(l.id,el);}
-      el.hidden=!l.visible;if(!el.hidden){el.textContent=(l.tag?l.tag+' ':'')+l.name;el.style.setProperty('--c',l.color);el.style.transform=`translate(${l.x}px,${l.y}px)`;}}
+      el.hidden=!l.visible;
+      if(!el.hidden){
+        el.dataset.team=l.team||'';
+        el.textContent=(l.tag?l.tag+' ':'')+l.name;
+        el.style.setProperty('--c',l.color);
+        el.style.transform=`translate(${l.x}px,${l.y}px)`;
+      }
+    }
     for(const [id,el] of labelNodes)if(!active.has(id))el.hidden=true;
+  }
+  function setPopups(list=[]){
+    const active=new Set();
+    for(const p of list){
+      active.add(p.id);
+      let el=popupNodes.get(p.id);
+      if(!el){el=document.createElement('div');el.className='hit-popup';el.innerHTML='<b></b><em></em>';n.popups.append(el);popupNodes.set(p.id,el);}
+      el.dataset.tone=p.tone||'punch';
+      const b=el.firstElementChild,em=el.lastElementChild;
+      b.textContent=p.score?String(p.score):'';
+      b.hidden=!p.score;
+      em.textContent=p.tag||'';
+      const scale=p.t<0.16?(0.65+p.t/0.16*0.62):p.t<0.32?(1.27-(p.t-0.16)/0.16*0.24):1.03;
+      const alpha=p.t>0.68?Math.max(0,1-(p.t-0.68)/0.32):1;
+      el.style.opacity=alpha.toFixed(2);
+      el.style.transform=`translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+    }
+    for(const [id,el] of popupNodes)if(!active.has(id)){el.remove();popupNodes.delete(id);}
   }
   function setIndicators(list=[]){
     const active=new Set();
@@ -544,6 +598,6 @@ export function createUI(cb={}){
   function setQuality(value){settings.quality=value;save();syncSettingsUI();}
 
   showScreen('menu');
-  return {showScreen,hud,announce,countdown,feed,setLabels,setIndicators,setSound,setMinimap,back,confirm,setQuality,nitroReady,
+  return {showScreen,hud,announce,countdown,feed,setLabels,setPopups,setIndicators,setSound,setMinimap,back,confirm,setQuality,nitroReady,
     set onScreen(fn){cb.onScreen=fn;}};
 }

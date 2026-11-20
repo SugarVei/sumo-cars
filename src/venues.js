@@ -7,7 +7,7 @@ import {MAPS,createMapManager} from './maps.js';
 export function createVenues(scene,world,groundMaterial,builders={}){
   const arenas=createMapManager(scene,world,groundMaterial);
   const cache=new Map();
-  let current={type:'arena',id:'meadow'};
+  let current={type:'arena',id:'testpit'};
   let venue=arenaAdapter();
 
   function arenaAdapter(){
@@ -16,15 +16,22 @@ export function createVenues(scene,world,groundMaterial,builders={}){
       get id(){return arenas.id;},
       get descriptor(){return arenas.descriptor;},
       get halfSize(){return arenas.halfSize;},
+      get pitHalf(){return arenas.pitHalf;},
       get dynamicProps(){return arenas.dynamicProps;},
       get group(){return arenas.group;},
       setRound:(round,total,shrink)=>arenas.setRound(round,total,shrink),
       spawnSafe:(x,z,r)=>arenas.spawnSafe(x,z,r),
       setVisible:value=>arenas.setVisible(value),
       update:(dt,time,player)=>arenas.update(dt,time,player),
+      tick:(dt,cars,env)=>arenas.tick(dt,cars,env),
       diagnostics:()=>arenas.diagnostics(),
       // Square arenas: distance from the nearest edge, negative outside.
-      edgeDistance(x,z){return arenas.halfSize-Math.max(Math.abs(x),Math.abs(z));},
+      edgeDistance(x,z){
+        const outer=arenas.halfSize-Math.max(Math.abs(x),Math.abs(z));
+        const pit=arenas.pitHalf;
+        if(pit>0){const toPit=Math.max(Math.abs(x),Math.abs(z))-pit;return Math.min(outer,toPit);}
+        return outer;
+      },
     };
   }
 
@@ -32,7 +39,7 @@ export function createVenues(scene,world,groundMaterial,builders={}){
     if(current.type===type&&current.id===id)return venue;
     if(current.type==='arena')arenas.deactivate();else venue.deactivate();
     if(type==='arena'){
-      arenas.setMap(MAPS.some(m=>m.id===id)?id:'meadow');venue=arenaAdapter();
+      arenas.setMap(MAPS.some(m=>m.id===id)?id:'testpit');venue=arenaAdapter();
     }else{
       const key=type+':'+id;let built=cache.get(key);
       if(!built){
